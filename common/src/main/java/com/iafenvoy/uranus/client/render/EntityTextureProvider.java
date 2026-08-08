@@ -1,9 +1,9 @@
 package com.iafenvoy.uranus.client.render;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 public interface EntityTextureProvider {
-    Identifier getTextureId();
+    ResourceLocation getTextureId();
 
     default float getScale() {
         return 1;

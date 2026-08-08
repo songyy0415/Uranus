@@ -2,12 +2,11 @@ package com.iafenvoy.uranus.client.model.tabula;
 
 import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
-import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
-
 import java.io.IOException;
 import java.io.Reader;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 
 public class JsonUtils {
     /**
@@ -36,7 +35,7 @@ public class JsonUtils {
     }
 
     public static Item getByNameOrId(String id) {
-        return Registries.ITEM.get(Identifier.tryParse(id));
+        return BuiltInRegistries.ITEM.get(ResourceLocation.tryParse(id));
     }
 
     public static Item getItem(JsonElement json, String memberName) {

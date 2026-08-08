@@ -1,9 +1,9 @@
 package com.iafenvoy.uranus.data;
 
-import net.minecraft.screen.PropertyDelegate;
+import net.minecraft.world.inventory.ContainerData;
 
 @Deprecated(forRemoval = true)
-public class EntityPropertyDelegate implements PropertyDelegate {
+public class EntityPropertyDelegate implements ContainerData {
     public int entityId = -1;
 
     public EntityPropertyDelegate() {
@@ -24,7 +24,7 @@ public class EntityPropertyDelegate implements PropertyDelegate {
     }
 
     @Override
-    public int size() {
+    public int getCount() {
         return 1;
     }
 }

@@ -1,11 +1,11 @@
 package com.iafenvoy.uranus.client.render;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.TextureUtil;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.texture.AbstractTexture;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.resource.ResourceManager;
+import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.server.packs.resources.ResourceManager;
 
 @Environment(EnvType.CLIENT)
 public class SimpleTexture extends AbstractTexture {
@@ -16,7 +16,7 @@ public class SimpleTexture extends AbstractTexture {
     }
 
     public void upload(boolean blur, boolean clamp) {
-        TextureUtil.prepareImage(this.getGlId(), 0, this.nativeImage.getWidth(), this.nativeImage.getHeight());
+        TextureUtil.prepareImage(this.getId(), 0, this.nativeImage.getWidth(), this.nativeImage.getHeight());
         this.nativeImage.upload(0, 0, 0, 0, 0, this.nativeImage.getWidth(), this.nativeImage.getHeight(), blur, clamp, false, true);
     }
 

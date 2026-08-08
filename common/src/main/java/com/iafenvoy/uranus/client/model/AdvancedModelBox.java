@@ -1,15 +1,15 @@
 package com.iafenvoy.uranus.client.model;
 
 import com.iafenvoy.uranus.client.model.basic.BasicModelPart;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import it.unimi.dsi.fastutil.objects.ObjectListIterator;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.util.Mth;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -186,24 +186,24 @@ public class AdvancedModelBox extends BasicModelPart {
         this.parent = parent;
     }
 
-    public void translateAndRotate(MatrixStack matrixStackIn) {
+    public void translateAndRotate(PoseStack matrixStackIn) {
         matrixStackIn.translate(this.rotationPointX / 16.0F, this.rotationPointY / 16.0F, (double) (this.rotationPointZ / 16.0F));
         if (this.rotateAngleZ != 0.0F)
-            matrixStackIn.multiply(RotationAxis.POSITIVE_Z.rotation(this.rotateAngleZ));
+            matrixStackIn.mulPose(Axis.ZP.rotation(this.rotateAngleZ));
         if (this.rotateAngleY != 0.0F)
-            matrixStackIn.multiply(RotationAxis.POSITIVE_Y.rotation(this.rotateAngleY));
+            matrixStackIn.mulPose(Axis.YP.rotation(this.rotateAngleY));
         if (this.rotateAngleX != 0.0F)
-            matrixStackIn.multiply(RotationAxis.POSITIVE_X.rotation(this.rotateAngleX));
+            matrixStackIn.mulPose(Axis.XP.rotation(this.rotateAngleX));
         matrixStackIn.scale(this.scaleX, this.scaleY, this.scaleZ);
     }
 
     @Override
-    public void render(MatrixStack matrixStack, VertexConsumer consumer, int light, int overlay, int color) {
+    public void render(PoseStack matrixStack, VertexConsumer consumer, int light, int overlay, int color) {
         if (this.showModel)
             if (!this.cubeList.isEmpty() || !this.childModels.isEmpty()) {
-                matrixStack.push();
+                matrixStack.pushPose();
                 this.translateAndRotate(matrixStack);
-                this.doRender(matrixStack.peek(), consumer, light, overlay, color);
+                this.doRender(matrixStack.last(), consumer, light, overlay, color);
                 ObjectListIterator<BasicModelPart> var9 = this.childModels.iterator();
                 if (!this.scaleChildren)
                     matrixStack.scale(1F / Math.max(this.scaleX, 0.0001F), 1F / Math.max(this.scaleY, 0.0001F), 1F / Math.max(this.scaleZ, 0.0001F));
@@ -211,13 +211,13 @@ public class AdvancedModelBox extends BasicModelPart {
                     BasicModelPart lvt_10_1_ = var9.next();
                     lvt_10_1_.render(matrixStack, consumer, light, overlay, color);
                 }
-                matrixStack.pop();
+                matrixStack.popPose();
             }
     }
 
-    private void doRender(MatrixStack.Entry entry, VertexConsumer consumer, int light, int overlay, int color) {
-        Matrix4f lvt_9_1_ = entry.getPositionMatrix();
-        Matrix3f lvt_10_1_ = entry.getNormalMatrix();
+    private void doRender(PoseStack.Pose entry, VertexConsumer consumer, int light, int overlay, int color) {
+        Matrix4f lvt_9_1_ = entry.pose();
+        Matrix3f lvt_10_1_ = entry.normal();
 
         for (TabulaModelRenderUtils.ModelBox modelBox : this.cubeList) {
             TabulaModelRenderUtils.TexturedQuad[] quads = modelBox.quads;
@@ -234,7 +234,7 @@ public class AdvancedModelBox extends BasicModelPart {
                     float z = vertexPosition.position.z() / 16.0F;
                     Vector4f vector4f = new Vector4f(x, y, z, 1.0F);
                     vector4f.mul(lvt_9_1_);
-                    consumer.vertex(vector4f.x(), vector4f.y(), vector4f.z(), color, vertexPosition.textureU, vertexPosition.textureV, overlay, light, normalX, normalY, normalZ);
+                    consumer.addVertex(vector4f.x(), vector4f.y(), vector4f.z(), color, vertexPosition.textureU, vertexPosition.textureV, overlay, light, normalX, normalY, normalZ);
                 }
             }
         }
@@ -246,7 +246,7 @@ public class AdvancedModelBox extends BasicModelPart {
 
     private float calculateRotation(float speed, float degree, boolean invert, float offset, float weight, float f, float f1) {
         float movementScale = this.model.getMovementScale();
-        float rotation = (MathHelper.cos(f * (speed * movementScale) + offset) * (degree * movementScale) * f1) + (weight * f1);
+        float rotation = (Mth.cos(f * (speed * movementScale) + offset) * (degree * movementScale) * f1) + (weight * f1);
         return invert ? -rotation : rotation;
     }
 

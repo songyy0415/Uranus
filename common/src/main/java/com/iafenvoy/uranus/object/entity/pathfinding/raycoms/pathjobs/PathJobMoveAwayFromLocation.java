@@ -4,9 +4,9 @@ package com.iafenvoy.uranus.object.entity.pathfinding.raycoms.pathjobs;
  */
 
 import com.iafenvoy.uranus.object.entity.pathfinding.raycoms.MNode;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
 
 /**
  * Job that handles moving away from something.
@@ -32,7 +32,7 @@ public class PathJobMoveAwayFromLocation extends AbstractPathJob {
      * @param range         max range to search.
      * @param entity        the entity.
      */
-    public PathJobMoveAwayFromLocation(final World world, final BlockPos start, final BlockPos avoid, final int avoidDistance, final int range, final LivingEntity entity) {
+    public PathJobMoveAwayFromLocation(final Level world, final BlockPos start, final BlockPos avoid, final int avoidDistance, final int range, final LivingEntity entity) {
         super(world, start, avoid, range, entity);
         this.avoid = new BlockPos(avoid);
         this.avoidDistance = avoidDistance;
@@ -46,7 +46,7 @@ public class PathJobMoveAwayFromLocation extends AbstractPathJob {
      */
     @Override
     protected double computeHeuristic(final BlockPos pos) {
-        return -this.avoid.getSquaredDistance(pos);
+        return -this.avoid.distSqr(pos);
     }
 
     /**
@@ -57,7 +57,7 @@ public class PathJobMoveAwayFromLocation extends AbstractPathJob {
      */
     @Override
     protected boolean isAtDestination(final MNode n) {
-        return Math.sqrt(this.avoid.getSquaredDistance(n.pos)) > this.avoidDistance;
+        return Math.sqrt(this.avoid.distSqr(n.pos)) > this.avoidDistance;
     }
 
     /**
@@ -68,6 +68,6 @@ public class PathJobMoveAwayFromLocation extends AbstractPathJob {
      */
     @Override
     protected double getNodeResultScore(final MNode n) {
-        return -this.avoid.getSquaredDistance(n.pos);
+        return -this.avoid.distSqr(n.pos);
     }
 }

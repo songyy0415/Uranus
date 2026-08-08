@@ -3,15 +3,15 @@ package com.iafenvoy.uranus.object.entity.pathfinding.raycoms;
     All of this code is used with permission from Raycoms, one of the developers of the minecolonies project.
  */
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ai.pathing.MobNavigation;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
+import net.minecraft.world.level.Level;
 
-public abstract class AbstractAdvancedPathNavigate extends MobNavigation {
+public abstract class AbstractAdvancedPathNavigate extends GroundPathNavigation {
     //  Parent class private members
-    protected final MobEntity ourEntity;
+    protected final Mob ourEntity;
     /**
      * The navigators node costs
      */
@@ -20,9 +20,9 @@ public abstract class AbstractAdvancedPathNavigate extends MobNavigation {
     protected double walkSpeedFactor = 1.0D;
     protected BlockPos originalDestination;
 
-    public AbstractAdvancedPathNavigate(final MobEntity entityLiving, final World worldIn) {
+    public AbstractAdvancedPathNavigate(final Mob entityLiving, final Level worldIn) {
         super(entityLiving, worldIn);
-        this.ourEntity = this.entity;
+        this.ourEntity = this.mob;
     }
 
     /**
@@ -102,7 +102,7 @@ public abstract class AbstractAdvancedPathNavigate extends MobNavigation {
      * @param corners the corners they can't leave.
      * @return the result of the pathing.
      */
-    public abstract PathResult moveToRandomPos(final int range, final double speed, final net.minecraft.util.Pair<BlockPos, BlockPos> corners, final RestrictionType restrictionType);
+    public abstract PathResult moveToRandomPos(final int range, final double speed, final net.minecraft.util.Tuple<BlockPos, BlockPos> corners, final RestrictionType restrictionType);
 
     /**
      * Used to move a living ourEntity with a speed.
@@ -127,7 +127,7 @@ public abstract class AbstractAdvancedPathNavigate extends MobNavigation {
      *
      * @return mobentity
      */
-    public MobEntity getOurEntity() {
+    public Mob getOurEntity() {
         return this.ourEntity;
     }
 

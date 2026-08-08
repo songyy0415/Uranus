@@ -4,11 +4,11 @@ package com.iafenvoy.uranus.object.entity.pathfinding.raycoms.pathjobs;
  */
 
 import com.iafenvoy.uranus.object.entity.pathfinding.raycoms.MNode;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.ai.pathing.Path;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.pathfinder.Path;
 
 /**
  * Job that handles moving to a location.
@@ -31,7 +31,7 @@ public class PathJobMoveToLocation extends AbstractPathJob {
      * @param range  max search range.
      * @param entity the entity.
      */
-    public PathJobMoveToLocation(final World world, final BlockPos start, final BlockPos end, final int range, final LivingEntity entity) {
+    public PathJobMoveToLocation(final Level world, final BlockPos start, final BlockPos end, final int range, final LivingEntity entity) {
         super(world, start, end, range, entity);
         this.destination = new BlockPos(end);
     }
@@ -56,7 +56,7 @@ public class PathJobMoveToLocation extends AbstractPathJob {
 
     @Override
     protected double computeHeuristic(final BlockPos pos) {
-        return Math.sqrt(this.destination.getSquaredDistance(pos));
+        return Math.sqrt(this.destination.distSqr(pos));
     }
 
     /**
@@ -70,8 +70,8 @@ public class PathJobMoveToLocation extends AbstractPathJob {
         if (this.destinationSlack <= DESTINATION_SLACK_NONE)
             return n.pos.getX() == this.destination.getX() && n.pos.getY() == this.destination.getY() && n.pos.getZ() == this.destination.getZ();
         if (n.pos.getY() == this.destination.getY() - 1)
-            return this.destination.isWithinDistance(new Vec3i(n.pos.getX(), this.destination.getY(), n.pos.getZ()), DESTINATION_SLACK_ADJACENT);
-        return this.destination.isWithinDistance(n.pos, DESTINATION_SLACK_ADJACENT);
+            return this.destination.closerThan(new Vec3i(n.pos.getX(), this.destination.getY(), n.pos.getZ()), DESTINATION_SLACK_ADJACENT);
+        return this.destination.closerThan(n.pos, DESTINATION_SLACK_ADJACENT);
     }
 
     /**
@@ -83,6 +83,6 @@ public class PathJobMoveToLocation extends AbstractPathJob {
     @Override
     protected double getNodeResultScore(final MNode n) {
         //  For Result Score lower is better
-        return this.destination.getSquaredDistance(n.pos);
+        return this.destination.distSqr(n.pos);
     }
 }

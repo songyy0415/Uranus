@@ -1,14 +1,14 @@
 package com.iafenvoy.uranus.client.model.tools;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.Entity;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -129,35 +129,35 @@ public class BasicModelRenderer<T extends Entity> {
         this.rotationPointZ = p_78793_3_;
     }
 
-    public void render(MatrixStack p_228308_1_, VertexConsumer p_228308_2_, int p_228308_3_, int p_228308_4_) {
+    public void render(PoseStack p_228308_1_, VertexConsumer p_228308_2_, int p_228308_3_, int p_228308_4_) {
         this.render(p_228308_1_, p_228308_2_, p_228308_3_, p_228308_4_, -1);
     }
 
-    public void render(MatrixStack p_228309_1_, VertexConsumer p_228309_2_, int p_228309_3_, int p_228309_4_, int color) {
+    public void render(PoseStack p_228309_1_, VertexConsumer p_228309_2_, int p_228309_3_, int p_228309_4_, int color) {
         if (this.showModel) {
             if (!this.cubeList.isEmpty() || !this.childModels.isEmpty()) {
-                p_228309_1_.push();
+                p_228309_1_.pushPose();
                 this.translateRotate(p_228309_1_);
-                this.doRender(p_228309_1_.peek(), p_228309_2_, p_228309_3_, p_228309_4_, color);
+                this.doRender(p_228309_1_.last(), p_228309_2_, p_228309_3_, p_228309_4_, color);
 
                 for (BasicModelRenderer<T> lvt_10_1_ : this.childModels)
                     lvt_10_1_.render(p_228309_1_, p_228309_2_, p_228309_3_, p_228309_4_, color);
 
-                p_228309_1_.pop();
+                p_228309_1_.popPose();
             }
         }
     }
 
-    public void translateRotate(MatrixStack p_228307_1_) {
+    public void translateRotate(PoseStack p_228307_1_) {
         p_228307_1_.translate(this.rotationPointX / 16.0F, this.rotationPointY / 16.0F, this.rotationPointZ / 16.0F);
-        if (this.rotateAngleZ != 0.0F) p_228307_1_.multiply(RotationAxis.POSITIVE_Z.rotation(this.rotateAngleZ));
-        if (this.rotateAngleY != 0.0F) p_228307_1_.multiply(RotationAxis.POSITIVE_Y.rotation(this.rotateAngleY));
-        if (this.rotateAngleX != 0.0F) p_228307_1_.multiply(RotationAxis.POSITIVE_X.rotation(this.rotateAngleX));
+        if (this.rotateAngleZ != 0.0F) p_228307_1_.mulPose(Axis.ZP.rotation(this.rotateAngleZ));
+        if (this.rotateAngleY != 0.0F) p_228307_1_.mulPose(Axis.YP.rotation(this.rotateAngleY));
+        if (this.rotateAngleX != 0.0F) p_228307_1_.mulPose(Axis.XP.rotation(this.rotateAngleX));
     }
 
-    private void doRender(MatrixStack.Entry p_228306_1_, VertexConsumer p_228306_2_, int p_228306_3_, int p_228306_4_, int color) {
-        Matrix4f lvt_9_1_ = p_228306_1_.getPositionMatrix();
-        Matrix3f lvt_10_1_ = p_228306_1_.getNormalMatrix();
+    private void doRender(PoseStack.Pose p_228306_1_, VertexConsumer p_228306_2_, int p_228306_3_, int p_228306_4_, int color) {
+        Matrix4f lvt_9_1_ = p_228306_1_.pose();
+        Matrix3f lvt_10_1_ = p_228306_1_.normal();
 
         for (ModelBox lvt_12_1_ : this.cubeList) {
             TexturedQuad[] var13 = lvt_12_1_.quads;
@@ -176,7 +176,7 @@ public class BasicModelRenderer<T extends Entity> {
                     float lvt_25_1_ = lvt_22_1_.position.z() / 16.0F;
                     Vector4f lvt_26_1_ = new Vector4f(lvt_23_1_, lvt_24_1_, lvt_25_1_, 1.0F);
                     lvt_26_1_.mul(lvt_9_1_);
-                    p_228306_2_.vertex(lvt_26_1_.x(), lvt_26_1_.y(), lvt_26_1_.z(), color, lvt_22_1_.textureU, lvt_22_1_.textureV, p_228306_4_, p_228306_3_, lvt_18_1_, lvt_19_1_, lvt_20_1_);
+                    p_228306_2_.addVertex(lvt_26_1_.x(), lvt_26_1_.y(), lvt_26_1_.z(), color, lvt_22_1_.textureU, lvt_22_1_.textureV, p_228306_4_, p_228306_3_, lvt_18_1_, lvt_19_1_, lvt_20_1_);
                 }
             }
         }
@@ -237,7 +237,7 @@ public class BasicModelRenderer<T extends Entity> {
                 }
             }
 
-            this.normal = p_i225951_9_.getUnitVector();
+            this.normal = p_i225951_9_.step();
             if (p_i225951_8_) {
                 this.normal.mul(-1.0F, 1.0F, 1.0F);
             }

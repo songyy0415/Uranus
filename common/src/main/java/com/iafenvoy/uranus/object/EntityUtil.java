@@ -1,44 +1,44 @@
 package com.iafenvoy.uranus.object;
 
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.LightningEntity;
-import net.minecraft.entity.SpawnReason;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ItemLike;
 
 public class EntityUtil {
-    public static <M extends MobEntity> void summon(EntityType<M> entityType, ServerWorld world, double x, double y, double z) {
-        MobEntity entityToSpawn = entityType.create(world);
+    public static <M extends Mob> void summon(EntityType<M> entityType, ServerLevel world, double x, double y, double z) {
+        Mob entityToSpawn = entityType.create(world);
         if (entityToSpawn != null) {
-            entityToSpawn.refreshPositionAndAngles(x, y, z, world.getRandom().nextFloat() * 360F, 0);
-            entityToSpawn.initialize(world, world.getLocalDifficulty(entityToSpawn.getBlockPos()), SpawnReason.MOB_SUMMONED, null);
-            world.spawnEntity(entityToSpawn);
+            entityToSpawn.moveTo(x, y, z, world.getRandom().nextFloat() * 360F, 0);
+            entityToSpawn.finalizeSpawn(world, world.getCurrentDifficultyAt(entityToSpawn.blockPosition()), MobSpawnType.MOB_SUMMONED, null);
+            world.addFreshEntity(entityToSpawn);
         }
     }
 
-    public static void lightening(ServerWorld world, double x, double y, double z) {
+    public static void lightening(ServerLevel world, double x, double y, double z) {
         lightening(world, x, y, z, true);
     }
 
-    public static void lightening(ServerWorld world, double x, double y, double z, boolean cosmetic) {
-        LightningEntity entityToSpawn = EntityType.LIGHTNING_BOLT.create(world);
+    public static void lightening(ServerLevel world, double x, double y, double z, boolean cosmetic) {
+        LightningBolt entityToSpawn = EntityType.LIGHTNING_BOLT.create(world);
         if (entityToSpawn != null) {
-            entityToSpawn.refreshPositionAfterTeleport(VecUtil.createBottomCenter(x, y, z));
-            entityToSpawn.setCosmetic(cosmetic);
-            world.spawnEntity(entityToSpawn);
+            entityToSpawn.moveTo(VecUtil.createBottomCenter(x, y, z));
+            entityToSpawn.setVisualOnly(cosmetic);
+            world.addFreshEntity(entityToSpawn);
         }
     }
 
-    public static void item(ServerWorld world, double x, double y, double z, ItemConvertible item, int pickUpDelay) {
+    public static void item(ServerLevel world, double x, double y, double z, ItemLike item, int pickUpDelay) {
         item(world, x, y, z, new ItemStack(item), pickUpDelay);
     }
 
-    public static void item(ServerWorld world, double x, double y, double z, ItemStack item, int pickUpDelay) {
+    public static void item(ServerLevel world, double x, double y, double z, ItemStack item, int pickUpDelay) {
         ItemEntity entityToSpawn = new ItemEntity(world, x, y + 1.0d, z, item);
-        entityToSpawn.setPickupDelay(pickUpDelay);
-        world.spawnEntity(entityToSpawn);
+        entityToSpawn.setPickUpDelay(pickUpDelay);
+        world.addFreshEntity(entityToSpawn);
     }
 }

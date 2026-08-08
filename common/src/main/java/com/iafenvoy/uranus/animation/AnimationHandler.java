@@ -2,7 +2,7 @@ package com.iafenvoy.uranus.animation;
 
 import com.iafenvoy.uranus.ServerHelper;
 import com.iafenvoy.uranus.network.AnimationPayload;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 import org.apache.commons.lang3.ArrayUtils;
 
 /**
@@ -20,7 +20,7 @@ public enum AnimationHandler {
      * @param <T>       the entity type
      */
     public <T extends Entity & IAnimatedEntity> void sendAnimationMessage(T entity, Animation animation) {
-        if (entity.getWorld().isClient) return;
+        if (entity.level().isClientSide) return;
         entity.setAnimation(animation);
         ServerHelper.sendToAll(new AnimationPayload(entity.getId(), ArrayUtils.indexOf(entity.getAnimations(), animation)));
     }

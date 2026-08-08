@@ -1,13 +1,13 @@
 package com.iafenvoy.uranus.client.model.basic;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.core.Direction;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -106,35 +106,35 @@ public class BasicModelPart {
         this.rotationPointZ = rotationPointZIn;
     }
 
-    public void render(MatrixStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn) {
+    public void render(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn) {
         this.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, -1);
     }
 
-    public void render(MatrixStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+    public void render(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
         if (this.showModel)
             if (!this.cubeList.isEmpty() || !this.childModels.isEmpty()) {
-                matrixStackIn.push();
+                matrixStackIn.pushPose();
                 this.translateRotate(matrixStackIn);
-                this.doRender(matrixStackIn.peek(), bufferIn, packedLightIn, packedOverlayIn, color);
+                this.doRender(matrixStackIn.last(), bufferIn, packedLightIn, packedOverlayIn, color);
                 for (BasicModelPart basicModelPart : this.childModels)
                     basicModelPart.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
-                matrixStackIn.pop();
+                matrixStackIn.popPose();
             }
     }
 
-    public void translateRotate(MatrixStack matrixStackIn) {
+    public void translateRotate(PoseStack matrixStackIn) {
         matrixStackIn.translate(this.rotationPointX / 16.0F, this.rotationPointY / 16.0F, (double) (this.rotationPointZ / 16.0F));
         if (this.rotateAngleZ != 0.0F)
-            matrixStackIn.multiply(RotationAxis.POSITIVE_Z.rotation(this.rotateAngleZ));
+            matrixStackIn.mulPose(Axis.ZP.rotation(this.rotateAngleZ));
         if (this.rotateAngleY != 0.0F)
-            matrixStackIn.multiply(RotationAxis.POSITIVE_Y.rotation(this.rotateAngleY));
+            matrixStackIn.mulPose(Axis.YP.rotation(this.rotateAngleY));
         if (this.rotateAngleX != 0.0F)
-            matrixStackIn.multiply(RotationAxis.POSITIVE_X.rotation(this.rotateAngleX));
+            matrixStackIn.mulPose(Axis.XP.rotation(this.rotateAngleX));
     }
 
-    private void doRender(MatrixStack.Entry matrixEntryIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
-        Matrix4f matrix4f = matrixEntryIn.getPositionMatrix();
-        Matrix3f matrix3f = matrixEntryIn.getNormalMatrix();
+    private void doRender(PoseStack.Pose matrixEntryIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
+        Matrix4f matrix4f = matrixEntryIn.pose();
+        Matrix3f matrix3f = matrixEntryIn.normal();
 
         for (ModelBox BasicModelPart$modelbox : this.cubeList)
             for (TexturedQuad BasicModelPart$texturedquad : BasicModelPart$modelbox.quads) {
@@ -151,7 +151,7 @@ public class BasicModelPart {
                     float f5 = BasicModelPart$positiontexturevertex.position.z() / 16.0F;
                     Vector4f vector4f = new Vector4f(f3, f4, f5, 1.0F);
                     vector4f.mul(matrix4f);
-                    bufferIn.vertex(vector4f.x(), vector4f.y(), vector4f.z(), color, BasicModelPart$positiontexturevertex.textureU, BasicModelPart$positiontexturevertex.textureV, packedOverlayIn, packedLightIn, f, f1, f2);
+                    bufferIn.addVertex(vector4f.x(), vector4f.y(), vector4f.z(), color, BasicModelPart$positiontexturevertex.textureU, BasicModelPart$positiontexturevertex.textureV, packedOverlayIn, packedLightIn, f, f1, f2);
                 }
             }
     }
@@ -266,7 +266,7 @@ public class BasicModelPart {
                 }
             }
 
-            this.normal = directionIn.getUnitVector();
+            this.normal = directionIn.step();
             if (mirrorIn) this.normal.mul(-1.0F, 1.0F, 1.0F);
         }
     }

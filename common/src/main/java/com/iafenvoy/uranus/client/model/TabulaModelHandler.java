@@ -4,9 +4,8 @@ import com.google.gson.*;
 import com.iafenvoy.uranus.client.model.tabula.TabulaModelContainer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.render.model.json.ModelTransformation;
-import net.minecraft.client.render.model.json.Transformation;
-
+import net.minecraft.client.renderer.block.model.ItemTransform;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
@@ -19,7 +18,7 @@ import java.lang.reflect.Type;
 public enum TabulaModelHandler implements JsonDeserializationContext {
     INSTANCE;
 
-    private final Gson gson = new GsonBuilder().registerTypeAdapter(Transformation.class, new Transformation.Deserializer()).registerTypeAdapter(ModelTransformation.class, new ModelTransformation.Deserializer()).create();
+    private final Gson gson = new GsonBuilder().registerTypeAdapter(ItemTransform.class, new ItemTransform.Deserializer()).registerTypeAdapter(ItemTransforms.class, new ItemTransforms.Deserializer()).create();
 
     public TabulaModelContainer loadTabulaModel(InputStream stream) {
         return this.gson.fromJson(new InputStreamReader(stream), TabulaModelContainer.class);

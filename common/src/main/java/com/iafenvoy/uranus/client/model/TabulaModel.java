@@ -8,8 +8,7 @@ import com.iafenvoy.uranus.client.model.tabula.TabulaModelContainer;
 import com.iafenvoy.uranus.util.function.MemorizeSupplier;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.entity.Entity;
-
+import net.minecraft.world.entity.Entity;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -85,7 +84,7 @@ public class TabulaModel<T extends Entity> extends AdvancedEntityModel<T> {
     }
 
     @Override
-    public void setAngles(T entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch) {
+    public void setupAnim(T entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch) {
         ITabulaModelAnimator<T> tabulaModelAnimator = this.tabulaAnimator.get();
         if (tabulaModelAnimator != null)
             tabulaModelAnimator.setRotationAngles(this, entity, limbAngle, limbDistance, animationProgress, headYaw, headPitch, 1.0F);

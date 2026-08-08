@@ -1,25 +1,29 @@
 package com.iafenvoy.uranus.object.entity.collision;
 
-import net.minecraft.entity.ai.pathing.*;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.pathfinder.PathComputationType;
+import net.minecraft.world.level.pathfinder.PathFinder;
+import net.minecraft.world.level.pathfinder.PathType;
+import net.minecraft.world.level.pathfinder.PathfindingContext;
+import net.minecraft.world.phys.Vec3;
 
-public class CustomCollisionsNavigator extends MobNavigation {
-    public CustomCollisionsNavigator(MobEntity mob, World world) {
+public class CustomCollisionsNavigator extends GroundPathNavigation {
+    public CustomCollisionsNavigator(Mob mob, Level world) {
         super(mob, world);
     }
 
-    protected PathNodeNavigator createPathNodeNavigator(int i) {
-        this.nodeMaker = new CustomCollisionsNodeProcessor();
-        return new PathNodeNavigator(this.nodeMaker, i);
+    protected PathFinder createPathFinder(int i) {
+        this.nodeEvaluator = new CustomCollisionsNodeProcessor();
+        return new PathFinder(this.nodeEvaluator, i);
     }
 
-    protected boolean canMoveDirectly(Vec3d posVec31, Vec3d posVec32, int sizeX, int sizeY, int sizeZ) {
-        int i = MathHelper.floor(posVec31.x);
-        int j = MathHelper.floor(posVec31.z);
+    protected boolean canMoveDirectly(Vec3 posVec31, Vec3 posVec32, int sizeX, int sizeY, int sizeZ) {
+        int i = Mth.floor(posVec31.x);
+        int j = Mth.floor(posVec31.z);
         double d0 = posVec32.x - posVec31.x;
         double d1 = posVec32.z - posVec31.z;
         double d2 = d0 * d0 + d1 * d1;
@@ -30,7 +34,7 @@ public class CustomCollisionsNavigator extends MobNavigation {
             d1 = d1 * d3;
             sizeX = sizeX + 2;
             sizeZ = sizeZ + 2;
-            if (!this.isSafeToStandAt(i, MathHelper.floor(posVec31.y), j, sizeX, sizeY, sizeZ, posVec31, d0, d1)) {
+            if (!this.isSafeToStandAt(i, Mth.floor(posVec31.y), j, sizeX, sizeY, sizeZ, posVec31, d0, d1)) {
                 return false;
             } else {
                 sizeX = sizeX - 2;
@@ -46,8 +50,8 @@ public class CustomCollisionsNavigator extends MobNavigation {
                 d7 = d7 / d1;
                 int k = d0 < 0.0D ? -1 : 1;
                 int l = d1 < 0.0D ? -1 : 1;
-                int i1 = MathHelper.floor(posVec32.x);
-                int j1 = MathHelper.floor(posVec32.z);
+                int i1 = Mth.floor(posVec32.x);
+                int j1 = Mth.floor(posVec32.z);
                 int k1 = i1 - i;
                 int l1 = j1 - j;
 
@@ -61,7 +65,7 @@ public class CustomCollisionsNavigator extends MobNavigation {
                         j += l;
                         l1 = j1 - j;
                     }
-                    if (!this.isSafeToStandAt(i, MathHelper.floor(posVec31.y), j, sizeX, sizeY, sizeZ, posVec31, d0, d1))
+                    if (!this.isSafeToStandAt(i, Mth.floor(posVec31.y), j, sizeX, sizeY, sizeZ, posVec31, d0, d1))
                         return false;
                 }
                 return true;
@@ -69,38 +73,38 @@ public class CustomCollisionsNavigator extends MobNavigation {
         }
     }
 
-    private boolean isPositionClear(int x, int y, int z, int sizeX, int sizeY, int sizeZ, Vec3d vec3d, double p_179692_8_, double p_179692_10_) {
-        for (BlockPos blockpos : BlockPos.iterate(new BlockPos(x, y, z), new BlockPos(x + sizeX - 1, y + sizeY - 1, z + sizeZ - 1))) {
+    private boolean isPositionClear(int x, int y, int z, int sizeX, int sizeY, int sizeZ, Vec3 vec3d, double p_179692_8_, double p_179692_10_) {
+        for (BlockPos blockpos : BlockPos.betweenClosed(new BlockPos(x, y, z), new BlockPos(x + sizeX - 1, y + sizeY - 1, z + sizeZ - 1))) {
             double d0 = (double) blockpos.getX() + 0.5D - vec3d.x;
             double d1 = (double) blockpos.getZ() + 0.5D - vec3d.z;
-            if (d0 * p_179692_8_ + d1 * p_179692_10_ >= 0 && !this.world.getBlockState(blockpos).canPathfindThrough(NavigationType.LAND) || ((ICustomCollisions) this.entity).canPassThrough(blockpos, this.world.getBlockState(blockpos), null))
+            if (d0 * p_179692_8_ + d1 * p_179692_10_ >= 0 && !this.level.getBlockState(blockpos).isPathfindable(PathComputationType.LAND) || ((ICustomCollisions) this.mob).canPassThrough(blockpos, this.level.getBlockState(blockpos), null))
                 return false;
         }
         return true;
     }
 
-    private boolean isSafeToStandAt(int x, int y, int z, int sizeX, int sizeY, int sizeZ, Vec3d vec31, double p_179683_8_, double p_179683_10_) {
+    private boolean isSafeToStandAt(int x, int y, int z, int sizeX, int sizeY, int sizeZ, Vec3 vec31, double p_179683_8_, double p_179683_10_) {
         int i = x - sizeX / 2;
         int j = z - sizeZ / 2;
         if (!this.isPositionClear(i, y, j, sizeX, sizeY, sizeZ, vec31, p_179683_8_, p_179683_10_))
             return false;
         else {
-            BlockPos.Mutable mutable = new BlockPos.Mutable();
+            BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
             for (int k = i; k < i + sizeX; ++k) {
                 for (int l = j; l < j + sizeZ; ++l) {
                     double d0 = (double) k + 0.5D - vec31.x;
                     double d1 = (double) l + 0.5D - vec31.z;
                     if (d0 * p_179683_8_ + d1 * p_179683_10_ >= 0.0D) {
-                        PathNodeType pathnodetype = this.nodeMaker.getNodeType(new PathContext(this.world, this.entity), k, y - 1, l, this.entity);
+                        PathType pathnodetype = this.nodeEvaluator.getPathTypeOfMob(new PathfindingContext(this.level, this.mob), k, y - 1, l, this.mob);
                         mutable.set(k, y - 1, l);
-                        if (!this.canWalkOnPath(pathnodetype) || ((ICustomCollisions) this.entity).canPassThrough(mutable, this.world.getBlockState(mutable), null))
+                        if (!this.hasValidPathType(pathnodetype) || ((ICustomCollisions) this.mob).canPassThrough(mutable, this.level.getBlockState(mutable), null))
                             return false;
 
-                        pathnodetype = this.nodeMaker.getNodeType(new PathContext(this.world, this.entity), k, y, l, this.entity);
-                        float f = this.entity.getPathfindingPenalty(pathnodetype);
+                        pathnodetype = this.nodeEvaluator.getPathTypeOfMob(new PathfindingContext(this.level, this.mob), k, y, l, this.mob);
+                        float f = this.mob.getPathfindingMalus(pathnodetype);
                         if (f < 0.0F || f >= 8.0F) return false;
 
-                        if (pathnodetype == PathNodeType.DAMAGE_FIRE || pathnodetype == PathNodeType.DANGER_FIRE || pathnodetype == PathNodeType.DAMAGE_OTHER)
+                        if (pathnodetype == PathType.DAMAGE_FIRE || pathnodetype == PathType.DANGER_FIRE || pathnodetype == PathType.DAMAGE_OTHER)
                             return false;
                     }
                 }
@@ -109,9 +113,9 @@ public class CustomCollisionsNavigator extends MobNavigation {
         }
     }
 
-    protected boolean canWalkOnPath(PathNodeType pathType) {
-        if (pathType == PathNodeType.WATER) return false;
-        else if (pathType == PathNodeType.LAVA) return false;
-        else return pathType != PathNodeType.OPEN;
+    protected boolean hasValidPathType(PathType pathType) {
+        if (pathType == PathType.WATER) return false;
+        else if (pathType == PathType.LAVA) return false;
+        else return pathType != PathType.OPEN;
     }
 }

@@ -1,48 +1,48 @@
 package com.iafenvoy.uranus.object.item;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.item.ToolMaterial;
-import net.minecraft.recipe.Ingredient;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Tier;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.level.block.Block;
 
 public class ToolMaterialUtil {
-    public static ToolMaterial of(int uses, float speed, float attackDamageBonus, int enchantmentLevel, ItemConvertible... repairIngredients) {
-        return of(TagKey.of(RegistryKeys.BLOCK, Identifier.of("")), uses, speed, attackDamageBonus, enchantmentLevel, repairIngredients);
+    public static Tier of(int uses, float speed, float attackDamageBonus, int enchantmentLevel, ItemLike... repairIngredients) {
+        return of(TagKey.create(Registries.BLOCK, ResourceLocation.parse("")), uses, speed, attackDamageBonus, enchantmentLevel, repairIngredients);
     }
 
-    public static ToolMaterial of(TagKey<Block> inverseTag, int uses, float speed, float attackDamageBonus, int enchantmentLevel, ItemConvertible... repairIngredients) {
-        return new ToolMaterial() {
+    public static Tier of(TagKey<Block> inverseTag, int uses, float speed, float attackDamageBonus, int enchantmentLevel, ItemLike... repairIngredients) {
+        return new Tier() {
             @Override
-            public int getDurability() {
+            public int getUses() {
                 return uses;
             }
 
             @Override
-            public float getMiningSpeedMultiplier() {
+            public float getSpeed() {
                 return speed;
             }
 
             @Override
-            public float getAttackDamage() {
+            public float getAttackDamageBonus() {
                 return attackDamageBonus;
             }
 
             @Override
-            public TagKey<Block> getInverseTag() {
+            public TagKey<Block> getIncorrectBlocksForDrops() {
                 return inverseTag;
             }
 
             @Override
-            public int getEnchantability() {
+            public int getEnchantmentValue() {
                 return enchantmentLevel;
             }
 
             @Override
             public Ingredient getRepairIngredient() {
-                return Ingredient.ofItems(repairIngredients);
+                return Ingredient.of(repairIngredients);
             }
         };
     }

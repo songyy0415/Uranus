@@ -1,15 +1,33 @@
 package com.iafenvoy.uranus.object.entity.pathfinding.raycoms;
 
-import net.minecraft.block.*;
-import net.minecraft.block.enums.BlockHalf;
-import net.minecraft.fluid.Fluid;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.WorldView;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.BambooSaplingBlock;
+import net.minecraft.world.level.block.BambooStalkBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CampfireBlock;
+import net.minecraft.world.level.block.CarpetBlock;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.FenceBlock;
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.FireBlock;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.MagmaBlock;
+import net.minecraft.world.level.block.PowderSnowBlock;
+import net.minecraft.world.level.block.SignBlock;
+import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.TrapDoorBlock;
+import net.minecraft.world.level.block.VineBlock;
+import net.minecraft.world.level.block.WallBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Half;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * Check if we can walk on a surface, drop into, or neither.
@@ -27,41 +45,41 @@ public enum SurfaceType {
      * @param pos        the position.
      * @return WALKABLE if the block at that location can be walked on.
      */
-    public static SurfaceType getSurfaceType(final BlockView world, final BlockState blockState, final BlockPos pos) {
+    public static SurfaceType getSurfaceType(final BlockGetter world, final BlockState blockState, final BlockPos pos) {
         final Block block = blockState.getBlock();
         if (block instanceof FenceBlock
                 || block instanceof FenceGateBlock
                 || block instanceof WallBlock
                 || block instanceof FireBlock
                 || block instanceof CampfireBlock
-                || block instanceof BambooBlock
-                || block instanceof BambooShootBlock
+                || block instanceof BambooStalkBlock
+                || block instanceof BambooSaplingBlock
                 || block instanceof DoorBlock
                 || block instanceof MagmaBlock
                 || block instanceof PowderSnowBlock) {
             return SurfaceType.NOT_PASSABLE;
         }
 
-        if ((block instanceof TrapdoorBlock) && !blockState.get(TrapdoorBlock.OPEN))
+        if ((block instanceof TrapDoorBlock) && !blockState.getValue(TrapDoorBlock.OPEN))
             return SurfaceType.WALKABLE;
 
-        final VoxelShape shape = blockState.getOutlineShape(world, pos);
-        if (shape.getMax(Direction.Axis.Y) > 1.0)
+        final VoxelShape shape = blockState.getShape(world, pos);
+        if (shape.max(Direction.Axis.Y) > 1.0)
             return SurfaceType.NOT_PASSABLE;
 
         final FluidState fluid = world.getFluidState(pos);
-        if (blockState.getBlock() == Blocks.LAVA || !fluid.isEmpty() && (fluid.getFluid() == Fluids.LAVA || fluid.getFluid() == Fluids.FLOWING_LAVA))
+        if (blockState.getBlock() == Blocks.LAVA || !fluid.isEmpty() && (fluid.getType() == Fluids.LAVA || fluid.getType() == Fluids.FLOWING_LAVA))
             return SurfaceType.NOT_PASSABLE;
 
         if (isWater(world, pos, blockState, fluid))
             return SurfaceType.WALKABLE;
 
-        if (block instanceof AbstractSignBlock || block instanceof VineBlock)
+        if (block instanceof SignBlock || block instanceof VineBlock)
             return SurfaceType.DROPABLE;
 
-        if ((blockState.isSolid() && (shape.getMax(Direction.Axis.X) - shape.getMin(Direction.Axis.X)) > 0.75
-                && (shape.getMax(Direction.Axis.Z) - shape.getMin(Direction.Axis.Z)) > 0.75)
-                || (blockState.getBlock() == Blocks.SNOW && blockState.get(SnowBlock.LAYERS) > 1)
+        if ((blockState.isSolid() && (shape.max(Direction.Axis.X) - shape.min(Direction.Axis.X)) > 0.75
+                && (shape.max(Direction.Axis.Z) - shape.min(Direction.Axis.Z)) > 0.75)
+                || (blockState.getBlock() == Blocks.SNOW && blockState.getValue(SnowLayerBlock.LAYERS) > 1)
                 || block instanceof CarpetBlock)
             return SurfaceType.WALKABLE;
 
@@ -74,7 +92,7 @@ public enum SurfaceType {
      * @param pos the pos in the world.
      * @return true if so.
      */
-    public static boolean isWater(final WorldView world, final BlockPos pos) {
+    public static boolean isWater(final LevelReader world, final BlockPos pos) {
         return isWater(world, pos, null, null);
     }
 
@@ -86,22 +104,22 @@ public enum SurfaceType {
      * @param pFluidState existing fluidstate or null
      * @return true if so.
      */
-    public static boolean isWater(final BlockView world, final BlockPos pos, BlockState pState, FluidState pFluidState) {
+    public static boolean isWater(final BlockGetter world, final BlockPos pos, BlockState pState, FluidState pFluidState) {
         BlockState state = pState;
         if (state == null) state = world.getBlockState(pos);
-        if (state.isOpaque()) return false;
+        if (state.canOcclude()) return false;
         if (state.getBlock() == Blocks.WATER) return true;
 
         FluidState fluidState = pFluidState;
         if (fluidState == null) fluidState = world.getFluidState(pos);
         if (fluidState.isEmpty()) return false;
 
-        if (state.getBlock() instanceof TrapdoorBlock || state.getBlock() instanceof HorizontalFacingBlock)
+        if (state.getBlock() instanceof TrapDoorBlock || state.getBlock() instanceof HorizontalDirectionalBlock)
             // getvalue() will throw an exception if the property does not exist
-            if (state.contains(TrapdoorBlock.OPEN) && !state.get(TrapdoorBlock.OPEN) && state.contains(TrapdoorBlock.HALF) && state.get(TrapdoorBlock.HALF) == BlockHalf.TOP)
+            if (state.hasProperty(TrapDoorBlock.OPEN) && !state.getValue(TrapDoorBlock.OPEN) && state.hasProperty(TrapDoorBlock.HALF) && state.getValue(TrapDoorBlock.HALF) == Half.TOP)
                 return false;
 
-        final Fluid fluid = fluidState.getFluid();
+        final Fluid fluid = fluidState.getType();
         return fluid == Fluids.WATER || fluid == Fluids.FLOWING_WATER;
     }
 }

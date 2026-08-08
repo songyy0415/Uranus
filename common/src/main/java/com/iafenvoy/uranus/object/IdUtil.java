@@ -1,9 +1,9 @@
 package com.iafenvoy.uranus.object;
 
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 public class IdUtil {
     public static String build(String namespace, String path) {
-        return Identifier.of(namespace, path).toString();
+        return ResourceLocation.fromNamespaceAndPath(namespace, path).toString();
     }
 }

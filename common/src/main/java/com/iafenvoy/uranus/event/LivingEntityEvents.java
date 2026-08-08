@@ -1,7 +1,7 @@
 package com.iafenvoy.uranus.event;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.LivingEntity;
 
 public class LivingEntityEvents {
     public static final Event<Fall> FALL = new com.iafenvoy.uranus.event.Event<>(callbacks -> (entity, fallDistance, multiplier, source) -> {

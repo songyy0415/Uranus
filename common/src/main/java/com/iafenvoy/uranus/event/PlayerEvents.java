@@ -1,6 +1,6 @@
 package com.iafenvoy.uranus.event;
 
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.player.Player;
 
 public class PlayerEvents {
     public static final Event<PlayerLoggedInOrOut> LOGGED_OUT = new com.iafenvoy.uranus.event.Event<>(callbacks -> player -> {
@@ -13,6 +13,6 @@ public class PlayerEvents {
      */
     @FunctionalInterface
     public interface PlayerLoggedInOrOut {
-        void handleConnection(PlayerEntity player);
+        void handleConnection(Player player);
     }
 }

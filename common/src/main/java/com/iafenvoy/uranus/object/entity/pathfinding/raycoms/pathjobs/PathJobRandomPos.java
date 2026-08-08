@@ -7,12 +7,12 @@ import com.iafenvoy.uranus.object.entity.pathfinding.raycoms.AbstractAdvancedPat
 import com.iafenvoy.uranus.object.entity.pathfinding.raycoms.MNode;
 import com.iafenvoy.uranus.object.entity.pathfinding.raycoms.PathResult;
 import com.iafenvoy.uranus.object.entity.pathfinding.raycoms.SurfaceType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.Pair;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.Tuple;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.Level;
 
 /**
  * Job that handles random pathing.
@@ -21,7 +21,7 @@ public class PathJobRandomPos extends AbstractPathJob {
     /**
      * Random pathing rand.
      */
-    private static final Random random = Random.createThreadSafe();
+    private static final RandomSource random = RandomSource.createThreadSafe();
     /**
      * Direction to walk to.
      */
@@ -45,7 +45,7 @@ public class PathJobRandomPos extends AbstractPathJob {
      * @param entity           the entity.
      */
     public PathJobRandomPos(
-            final World world,
+            final Level world,
             final BlockPos start,
             final int minDistFromStart,
             final int range,
@@ -54,8 +54,8 @@ public class PathJobRandomPos extends AbstractPathJob {
         this.minDistFromStart = minDistFromStart;
         this.maxDistToDest = range;
 
-        final Pair<Direction, Direction> dir = getRandomDirectionTuple(random);
-        this.destination = start.offset(dir.getLeft(), minDistFromStart).offset(dir.getRight(), minDistFromStart);
+        final Tuple<Direction, Direction> dir = getRandomDirectionTuple(random);
+        this.destination = start.relative(dir.getA(), minDistFromStart).relative(dir.getB(), minDistFromStart);
     }
 
     /**
@@ -68,7 +68,7 @@ public class PathJobRandomPos extends AbstractPathJob {
      * @param entity           the entity.
      */
     public PathJobRandomPos(
-            final World world,
+            final Level world,
             final BlockPos start,
             final int minDistFromStart,
             final int searchRange,
@@ -91,7 +91,7 @@ public class PathJobRandomPos extends AbstractPathJob {
      * @param entity           the entity.
      */
     public PathJobRandomPos(
-            final World world,
+            final Level world,
             final BlockPos start,
             final int minDistFromStart,
             final int range,
@@ -103,8 +103,8 @@ public class PathJobRandomPos extends AbstractPathJob {
         this.minDistFromStart = minDistFromStart;
         this.maxDistToDest = range;
 
-        final Pair<Direction, Direction> dir = getRandomDirectionTuple(random);
-        this.destination = start.offset(dir.getLeft(), minDistFromStart).offset(dir.getRight(), minDistFromStart);
+        final Tuple<Direction, Direction> dir = getRandomDirectionTuple(random);
+        this.destination = start.relative(dir.getA(), minDistFromStart).relative(dir.getB(), minDistFromStart);
     }
 
     /**
@@ -113,26 +113,26 @@ public class PathJobRandomPos extends AbstractPathJob {
      * @param random a random object.
      * @return a tuple of two directions.
      */
-    public static Pair<Direction, Direction> getRandomDirectionTuple(final Random random) {
-        return new Pair<>(Direction.random(random), Direction.random(random));
+    public static Tuple<Direction, Direction> getRandomDirectionTuple(final RandomSource random) {
+        return new Tuple<>(Direction.getRandom(random), Direction.getRandom(random));
     }
 
     @Override
     protected double computeHeuristic(final BlockPos pos) {
-        return Math.sqrt(this.destination.getSquaredDistance(new BlockPos(pos.getX(), this.destination.getY(), pos.getZ())));
+        return Math.sqrt(this.destination.distSqr(new BlockPos(pos.getX(), this.destination.getY(), pos.getZ())));
     }
 
     @Override
     protected boolean isAtDestination(final MNode n) {
-        return random.nextInt(10) == 0 && this.isInRestrictedArea(n.pos) && (this.start.getSquaredDistance(n.pos) > this.minDistFromStart * this.minDistFromStart)
-                && SurfaceType.getSurfaceType(this.world, this.world.getBlockState(n.pos.down()), n.pos.down()) == SurfaceType.WALKABLE
-                && this.destination.getSquaredDistance(n.pos) < this.maxDistToDest * this.maxDistToDest;
+        return random.nextInt(10) == 0 && this.isInRestrictedArea(n.pos) && (this.start.distSqr(n.pos) > this.minDistFromStart * this.minDistFromStart)
+                && SurfaceType.getSurfaceType(this.world, this.world.getBlockState(n.pos.below()), n.pos.below()) == SurfaceType.WALKABLE
+                && this.destination.distSqr(n.pos) < this.maxDistToDest * this.maxDistToDest;
     }
 
     @Override
     protected double getNodeResultScore(final MNode n) {
         //  For Result Score lower is better
-        return this.destination.getSquaredDistance(n.pos);
+        return this.destination.distSqr(n.pos);
     }
 
     /**

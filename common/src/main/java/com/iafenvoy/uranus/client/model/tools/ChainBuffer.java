@@ -3,10 +3,10 @@ package com.iafenvoy.uranus.client.model.tools;
 import com.iafenvoy.uranus.util.ClientUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.model.ModelPart;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 
 /**
  * @author rafa_mv
@@ -42,13 +42,13 @@ public class ChainBuffer {
      */
     public void calculateChainSwingBuffer(float maxAngle, int bufferTime, float angleDecrement, float divisor, LivingEntity entity) {
         this.prevYawVariation = this.yawVariation;
-        if (entity.bodyYaw != entity.prevBodyYaw && MathHelper.abs(this.yawVariation) < maxAngle) {
-            this.yawVariation += (entity.prevBodyYaw - entity.bodyYaw) / divisor;
+        if (entity.yBodyRot != entity.yBodyRotO && Mth.abs(this.yawVariation) < maxAngle) {
+            this.yawVariation += (entity.yBodyRotO - entity.yBodyRot) / divisor;
         }
         if (this.yawVariation > 0.7F * angleDecrement) {
             if (this.yawTimer > bufferTime) {
                 this.yawVariation -= angleDecrement;
-                if (MathHelper.abs(this.yawVariation) < angleDecrement) {
+                if (Mth.abs(this.yawVariation) < angleDecrement) {
                     this.yawVariation = 0.0F;
                     this.yawTimer = 0;
                 }
@@ -58,7 +58,7 @@ public class ChainBuffer {
         } else if (this.yawVariation < -0.7F * angleDecrement) {
             if (this.yawTimer > bufferTime) {
                 this.yawVariation += angleDecrement;
-                if (MathHelper.abs(this.yawVariation) < angleDecrement) {
+                if (Mth.abs(this.yawVariation) < angleDecrement) {
                     this.yawVariation = 0.0F;
                     this.yawTimer = 0;
                 }
@@ -79,13 +79,13 @@ public class ChainBuffer {
      */
     public void calculateChainWaveBuffer(float maxAngle, int bufferTime, float angleDecrement, float divisor, LivingEntity entity) {
         this.prevPitchVariation = this.pitchVariation;
-        if (entity.getPitch() != entity.prevPitch && MathHelper.abs(this.pitchVariation) < maxAngle) {
-            this.pitchVariation += (entity.prevPitch - entity.getPitch()) / divisor;
+        if (entity.getXRot() != entity.xRotO && Mth.abs(this.pitchVariation) < maxAngle) {
+            this.pitchVariation += (entity.xRotO - entity.getXRot()) / divisor;
         }
         if (this.pitchVariation > 0.7F * angleDecrement) {
             if (this.pitchTimer > bufferTime) {
                 this.pitchVariation -= angleDecrement;
-                if (MathHelper.abs(this.pitchVariation) < angleDecrement) {
+                if (Mth.abs(this.pitchVariation) < angleDecrement) {
                     this.pitchVariation = 0.0F;
                     this.pitchTimer = 0;
                 }
@@ -95,7 +95,7 @@ public class ChainBuffer {
         } else if (this.pitchVariation < -0.7F * angleDecrement) {
             if (this.pitchTimer > bufferTime) {
                 this.pitchVariation += angleDecrement;
-                if (MathHelper.abs(this.pitchVariation) < angleDecrement) {
+                if (Mth.abs(this.pitchVariation) < angleDecrement) {
                     this.pitchVariation = 0.0F;
                     this.pitchTimer = 0;
                 }
@@ -135,9 +135,9 @@ public class ChainBuffer {
      * @param boxes the box array
      */
     public void applyChainSwingBuffer(ModelPart... boxes) {
-        float rotateAmount = 0.01745329251F * ClientUtils.interpolate(this.prevYawVariation, this.yawVariation, MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false)) / boxes.length;
+        float rotateAmount = 0.01745329251F * ClientUtils.interpolate(this.prevYawVariation, this.yawVariation, Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false)) / boxes.length;
         for (ModelPart box : boxes) {
-            box.yaw += rotateAmount;
+            box.yRot += rotateAmount;
         }
     }
 
@@ -147,9 +147,9 @@ public class ChainBuffer {
      * @param boxes the box array
      */
     public void applyChainWaveBuffer(ModelPart... boxes) {
-        float rotateAmount = 0.01745329251F * ClientUtils.interpolate(this.prevPitchVariation, this.pitchVariation, MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(false)) / boxes.length;
+        float rotateAmount = 0.01745329251F * ClientUtils.interpolate(this.prevPitchVariation, this.pitchVariation, Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false)) / boxes.length;
         for (ModelPart box : boxes) {
-            box.pitch += rotateAmount;
+            box.xRot += rotateAmount;
         }
     }
 }

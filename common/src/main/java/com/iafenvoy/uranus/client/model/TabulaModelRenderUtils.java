@@ -2,7 +2,7 @@ package com.iafenvoy.uranus.client.model;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.Direction;
 import org.joml.Vector3f;
 
 @Environment(EnvType.CLIENT)
@@ -46,7 +46,7 @@ public class TabulaModelRenderUtils {
                 }
             }
 
-            this.normal = direction.getUnitVector();
+            this.normal = direction.step();
             if (mirror)
                 this.normal.mul(-1.0F, 1.0F, 1.0F);
         }

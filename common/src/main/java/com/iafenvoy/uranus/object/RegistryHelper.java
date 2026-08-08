@@ -1,36 +1,36 @@
 package com.iafenvoy.uranus.object;
 
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.damage.DamageType;
-import net.minecraft.item.ArmorMaterial;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.damagesource.DamageType;
+import net.minecraft.world.item.ArmorMaterial;
+import net.minecraft.world.item.enchantment.Enchantment;
 
 public class RegistryHelper {
-    public static <T> T get(DynamicRegistryManager manager, RegistryKey<Registry<T>> registry, RegistryKey<T> key) {
-        return manager.get(registry).get(key);
+    public static <T> T get(RegistryAccess manager, ResourceKey<Registry<T>> registry, ResourceKey<T> key) {
+        return manager.registryOrThrow(registry).get(key);
     }
 
-    public static <T> RegistryEntry<T> entry(DynamicRegistryManager manager, RegistryKey<Registry<T>> registry, T obj) {
-        return manager.get(registry).getEntry(obj);
+    public static <T> Holder<T> entry(RegistryAccess manager, ResourceKey<Registry<T>> registry, T obj) {
+        return manager.registryOrThrow(registry).wrapAsHolder(obj);
     }
 
-    public static <T> RegistryEntry<T> getEntry(DynamicRegistryManager manager, RegistryKey<Registry<T>> registry, RegistryKey<T> key) {
+    public static <T> Holder<T> getEntry(RegistryAccess manager, ResourceKey<Registry<T>> registry, ResourceKey<T> key) {
         return entry(manager, registry, get(manager, registry, key));
     }
 
-    public static RegistryEntry<Enchantment> getEnchantment(DynamicRegistryManager manager, RegistryKey<Enchantment> key) {
-        return getEntry(manager, RegistryKeys.ENCHANTMENT, key);
+    public static Holder<Enchantment> getEnchantment(RegistryAccess manager, ResourceKey<Enchantment> key) {
+        return getEntry(manager, Registries.ENCHANTMENT, key);
     }
 
-    public static RegistryEntry<ArmorMaterial> getArmorMaterial(DynamicRegistryManager manager, RegistryKey<ArmorMaterial> key) {
-        return getEntry(manager, RegistryKeys.ARMOR_MATERIAL, key);
+    public static Holder<ArmorMaterial> getArmorMaterial(RegistryAccess manager, ResourceKey<ArmorMaterial> key) {
+        return getEntry(manager, Registries.ARMOR_MATERIAL, key);
     }
 
-    public static RegistryEntry<DamageType> getDamageSource(DynamicRegistryManager manager, RegistryKey<DamageType> key) {
-        return getEntry(manager, RegistryKeys.DAMAGE_TYPE, key);
+    public static Holder<DamageType> getDamageSource(RegistryAccess manager, ResourceKey<DamageType> key) {
+        return getEntry(manager, Registries.DAMAGE_TYPE, key);
     }
 }

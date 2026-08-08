@@ -2,12 +2,11 @@ package com.iafenvoy.uranus.network;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.PacketByteBuf;
 import org.apache.commons.lang3.Validate;
 
 import java.nio.charset.StandardCharsets;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 
 /**
  * Utilities for interacting with PacketBuffer.
@@ -16,8 +15,8 @@ import java.nio.charset.StandardCharsets;
  * @since 1.0.0
  */
 public class PacketBufferUtils {
-    public static PacketByteBuf create() {
-        return new PacketByteBuf(Unpooled.buffer());
+    public static FriendlyByteBuf create() {
+        return new FriendlyByteBuf(Unpooled.buffer());
     }
 
     /**
@@ -118,24 +117,24 @@ public class PacketBufferUtils {
     }
 
     /**
-     * Write an {@link NbtCompound} to the byte buffer. It uses the minecraft encoding.
+     * Write an {@link CompoundTag} to the byte buffer. It uses the minecraft encoding.
      *
      * @param to  The buffer to write to
      * @param tag The tag to write
      */
-    public static void writeTag(ByteBuf to, NbtCompound tag) {
-        PacketByteBuf pb = new PacketByteBuf(to);
+    public static void writeTag(ByteBuf to, CompoundTag tag) {
+        FriendlyByteBuf pb = new FriendlyByteBuf(to);
         pb.writeNbt(tag);
     }
 
     /**
-     * Read an {@link NbtCompound} from the byte buffer. It uses the minecraft encoding.
+     * Read an {@link CompoundTag} from the byte buffer. It uses the minecraft encoding.
      *
      * @param from The buffer to read from
      * @return The read tag
      */
-    public static NbtCompound readTag(ByteBuf from) {
-        PacketByteBuf pb = new PacketByteBuf(from);
+    public static CompoundTag readTag(ByteBuf from) {
+        FriendlyByteBuf pb = new FriendlyByteBuf(from);
         try {
             return pb.readNbt();
         } catch (Exception e) {

@@ -4,41 +4,41 @@ package com.iafenvoy.uranus.object.entity.pathfinding.raycoms;
  */
 
 import com.iafenvoy.uranus.world.WorldChunkUtil;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.resource.featuretoggle.FeatureSet;
-import net.minecraft.server.world.ChunkHolder;
-import net.minecraft.server.world.ServerChunkManager;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldView;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.source.BiomeAccess;
-import net.minecraft.world.border.WorldBorder;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkStatus;
-import net.minecraft.world.chunk.WorldChunk;
-import net.minecraft.world.chunk.light.LightingProvider;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.server.level.ChunkHolder;
+import net.minecraft.server.level.ServerChunkCache;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.flag.FeatureFlagSet;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeManager;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.border.WorldBorder;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.lighting.LevelLightEngine;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class ChunkCache implements WorldView {
+public class ChunkCache implements LevelReader {
     protected final int chunkX;
     protected final int chunkZ;
-    protected final WorldChunk[][] chunkArray;
+    protected final LevelChunk[][] chunkArray;
     /**
      * set by !chunk.getAreLevelsEmpty
      */
@@ -46,7 +46,7 @@ public class ChunkCache implements WorldView {
     /**
      * Reference to the World object.
      */
-    protected final World world;
+    protected final Level world;
     /**
      * Dimensiontype.
      */
@@ -54,25 +54,25 @@ public class ChunkCache implements WorldView {
     private final int minBuildHeight;
     private final int maxBuildHeight;
 
-    public ChunkCache(World worldIn, BlockPos posFromIn, BlockPos posToIn, int subIn, final DimensionType type) {
+    public ChunkCache(Level worldIn, BlockPos posFromIn, BlockPos posToIn, int subIn, final DimensionType type) {
         this.world = worldIn;
         this.chunkX = posFromIn.getX() - subIn >> 4;
         this.chunkZ = posFromIn.getZ() - subIn >> 4;
         int i = posToIn.getX() + subIn >> 4;
         int j = posToIn.getZ() + subIn >> 4;
-        this.chunkArray = new WorldChunk[i - this.chunkX + 1][j - this.chunkZ + 1];
+        this.chunkArray = new LevelChunk[i - this.chunkX + 1][j - this.chunkZ + 1];
         this.empty = true;
 
         for (int k = this.chunkX; k <= i; ++k)
             for (int l = this.chunkZ; l <= j; ++l)
-                if (WorldChunkUtil.isEntityChunkLoaded(this.world, new ChunkPos(k, l)) && worldIn.getChunkManager() instanceof ServerChunkManager serverChunkCache) {
-                    final ChunkHolder holder = serverChunkCache.chunkLoadingManager.getChunkHolder(ChunkPos.toLong(k, l));
+                if (WorldChunkUtil.isEntityChunkLoaded(this.world, new ChunkPos(k, l)) && worldIn.getChunkSource() instanceof ServerChunkCache serverChunkCache) {
+                    final ChunkHolder holder = serverChunkCache.chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(k, l));
                     if (holder != null)
-                        this.chunkArray[k - this.chunkX][l - this.chunkZ] = holder.getAccessibleFuture().getNow(ChunkHolder.UNLOADED_WORLD_CHUNK).orElse(null);
+                        this.chunkArray[k - this.chunkX][l - this.chunkZ] = holder.getFullChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK).orElse(null);
                 }
         this.dimType = type;
-        this.minBuildHeight = worldIn.getBottomY();
-        this.maxBuildHeight = worldIn.getTopY();
+        this.minBuildHeight = worldIn.getMinBuildHeight();
+        this.maxBuildHeight = worldIn.getMaxBuildHeight();
     }
 
     /**
@@ -86,10 +86,10 @@ public class ChunkCache implements WorldView {
 
     @Override
     public BlockEntity getBlockEntity(BlockPos pos) {
-        return this.getTileEntity(pos, WorldChunk.CreationType.CHECK); // Forge: don't modify world from other threads
+        return this.getTileEntity(pos, LevelChunk.EntityCreationType.CHECK); // Forge: don't modify world from other threads
     }
 
-    public BlockEntity getTileEntity(BlockPos pos, WorldChunk.CreationType createType) {
+    public BlockEntity getTileEntity(BlockPos pos, LevelChunk.EntityCreationType createType) {
         int i = (pos.getX() >> 4) - this.chunkX;
         int j = (pos.getZ() >> 4) - this.chunkZ;
         if (!this.withinBounds(i, j)) return null;
@@ -97,44 +97,44 @@ public class ChunkCache implements WorldView {
     }
 
     @Override
-    public int getBottomY() {
+    public int getMinBuildHeight() {
         return this.minBuildHeight;
     }
 
     @Override
-    public int getTopY() {
+    public int getMaxBuildHeight() {
         return this.maxBuildHeight;
     }
 
     @NotNull
     @Override
     public BlockState getBlockState(BlockPos pos) {
-        if (pos.getY() >= this.getBottomY() && pos.getY() < this.getTopY()) {
+        if (pos.getY() >= this.getMinBuildHeight() && pos.getY() < this.getMaxBuildHeight()) {
             int i = (pos.getX() >> 4) - this.chunkX;
             int j = (pos.getZ() >> 4) - this.chunkZ;
             if (i >= 0 && i < this.chunkArray.length && j >= 0 && j < this.chunkArray[i].length) {
-                WorldChunk chunk = this.chunkArray[i][j];
+                LevelChunk chunk = this.chunkArray[i][j];
                 if (chunk != null) return chunk.getBlockState(pos);
             }
         }
-        return Blocks.AIR.getDefaultState();
+        return Blocks.AIR.defaultBlockState();
     }
 
     @Override
     public FluidState getFluidState(final BlockPos pos) {
-        if (pos.getY() >= this.getBottomY() && pos.getY() < this.getTopY()) {
+        if (pos.getY() >= this.getMinBuildHeight() && pos.getY() < this.getMaxBuildHeight()) {
             int i = (pos.getX() >> 4) - this.chunkX;
             int j = (pos.getZ() >> 4) - this.chunkZ;
             if (i >= 0 && i < this.chunkArray.length && j >= 0 && j < this.chunkArray[i].length) {
-                WorldChunk chunk = this.chunkArray[i][j];
+                LevelChunk chunk = this.chunkArray[i][j];
                 if (chunk != null) return chunk.getFluidState(pos);
             }
         }
-        return Fluids.EMPTY.getDefaultState();
+        return Fluids.EMPTY.defaultFluidState();
     }
 
     @Override
-    public RegistryEntry<Biome> getGeneratorStoredBiome(final int x, final int y, final int z) {
+    public Holder<Biome> getUncachedNoiseBiome(final int x, final int y, final int z) {
         return null;
     }
 
@@ -143,13 +143,13 @@ public class ChunkCache implements WorldView {
      * blocks to still pass this check.
      */
     @Override
-    public boolean isAir(BlockPos pos) {
+    public boolean isEmptyBlock(BlockPos pos) {
         BlockState state = this.getBlockState(pos);
         return state.isAir();
     }
 
     @Override
-    public Chunk getChunk(final int x, final int z, final ChunkStatus requiredStatus, final boolean nonnull) {
+    public ChunkAccess getChunk(final int x, final int z, final ChunkStatus requiredStatus, final boolean nonnull) {
         int i = x - this.chunkX;
         int j = z - this.chunkZ;
         if (i >= 0 && i < this.chunkArray.length && j >= 0 && j < this.chunkArray[i].length)
@@ -158,27 +158,27 @@ public class ChunkCache implements WorldView {
     }
 
     @Override
-    public boolean isChunkLoaded(final int chunkX, final int chunkZ) {
+    public boolean hasChunk(final int chunkX, final int chunkZ) {
         return false;
     }
 
     @Override
-    public BlockPos getTopPosition(final Heightmap.Type heightmapType, final BlockPos pos) {
+    public BlockPos getHeightmapPos(final Heightmap.Types heightmapType, final BlockPos pos) {
         return null;
     }
 
     @Override
-    public int getTopY(final Heightmap.Type heightmapType, final int x, final int z) {
+    public int getHeight(final Heightmap.Types heightmapType, final int x, final int z) {
         return 0;
     }
 
     @Override
-    public int getAmbientDarkness() {
+    public int getSkyDarken() {
         return 0;
     }
 
     @Override
-    public BiomeAccess getBiomeAccess() {
+    public BiomeManager getBiomeManager() {
         return null;
     }
 
@@ -188,32 +188,32 @@ public class ChunkCache implements WorldView {
     }
 
     @Override
-    public boolean doesNotIntersectEntities(final Entity entityIn, final VoxelShape shape) {
+    public boolean isUnobstructed(final Entity entityIn, final VoxelShape shape) {
         return false;
     }
 
     @Override
-    public List<VoxelShape> getEntityCollisions(@org.jetbrains.annotations.Nullable final Entity p_186427_, final Box p_186428_) {
+    public List<VoxelShape> getEntityCollisions(@org.jetbrains.annotations.Nullable final Entity p_186427_, final AABB p_186428_) {
         return null;
     }
 
     @Override
-    public int getStrongRedstonePower(BlockPos pos, Direction direction) {
-        return this.getBlockState(pos).getStrongRedstonePower(this, pos, direction);
+    public int getDirectSignal(BlockPos pos, Direction direction) {
+        return this.getBlockState(pos).getDirectSignal(this, pos, direction);
     }
 
     @Override
-    public DynamicRegistryManager getRegistryManager() {
-        return DynamicRegistryManager.EMPTY;
+    public RegistryAccess registryAccess() {
+        return RegistryAccess.EMPTY;
     }
 
     @Override
-    public FeatureSet getEnabledFeatures() {
-        return FeatureSet.empty();
+    public FeatureFlagSet enabledFeatures() {
+        return FeatureFlagSet.of();
     }
 
     @Override
-    public boolean isClient() {
+    public boolean isClientSide() {
         return false;
     }
 
@@ -223,7 +223,7 @@ public class ChunkCache implements WorldView {
     }
 
     @Override
-    public DimensionType getDimension() {
+    public DimensionType dimensionType() {
         return this.dimType;
     }
 
@@ -232,12 +232,12 @@ public class ChunkCache implements WorldView {
     }
 
     @Override
-    public float getBrightness(final Direction direction, final boolean b) {
+    public float getShade(final Direction direction, final boolean b) {
         return 0;
     }
 
     @Override
-    public LightingProvider getLightingProvider() {
+    public LevelLightEngine getLightEngine() {
         return null;
     }
 }

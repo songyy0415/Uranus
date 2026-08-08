@@ -1,12 +1,12 @@
 package com.iafenvoy.uranus.world;
 
-import net.minecraft.server.world.ChunkHolder;
-import net.minecraft.server.world.ServerChunkManager;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.WorldAccess;
-import net.minecraft.world.chunk.ChunkStatus;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ChunkHolder;
+import net.minecraft.server.level.ServerChunkCache;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 
 /**
  * Class which has world related util functions like chunk load checks
@@ -19,7 +19,7 @@ public class WorldChunkUtil {
      * @param pos   position to check
      * @return true if block is accessible/loaded
      */
-    public static boolean isBlockLoaded(final WorldAccess world, final BlockPos pos) {
+    public static boolean isBlockLoaded(final LevelAccessor world, final BlockPos pos) {
         return isChunkLoaded(world, pos.getX() >> 4, pos.getZ() >> 4);
     }
 
@@ -31,11 +31,11 @@ public class WorldChunkUtil {
      * @param z     chunk position
      * @return true if loaded
      */
-    public static boolean isChunkLoaded(final WorldAccess world, final int x, final int z) {
-        if (world.getChunkManager() instanceof ServerChunkManager serverChunkManager) {
-            final ChunkHolder holder = serverChunkManager.chunkLoadingManager.getChunkHolder(ChunkPos.toLong(x, z));
+    public static boolean isChunkLoaded(final LevelAccessor world, final int x, final int z) {
+        if (world.getChunkSource() instanceof ServerChunkCache serverChunkManager) {
+            final ChunkHolder holder = serverChunkManager.chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
             if (holder != null)
-                return holder.getAccessibleFuture().getNow(ChunkHolder.UNLOADED_WORLD_CHUNK).isPresent();
+                return holder.getFullChunkFuture().getNow(ChunkHolder.UNLOADED_LEVEL_CHUNK).isSuccess();
             return false;
         }
         return world.getChunk(x, z, ChunkStatus.FULL, false) != null;
@@ -49,7 +49,7 @@ public class WorldChunkUtil {
      * @param pos   chunk position
      * @return true if loaded
      */
-    public static boolean isChunkLoaded(final WorldAccess world, final ChunkPos pos) {
+    public static boolean isChunkLoaded(final LevelAccessor world, final ChunkPos pos) {
         return isChunkLoaded(world, pos.x, pos.z);
     }
 
@@ -60,7 +60,7 @@ public class WorldChunkUtil {
      * @param pos   position to check
      * @return true if block is accessible/loaded
      */
-    public static boolean isEntityBlockLoaded(final WorldAccess world, final BlockPos pos) {
+    public static boolean isEntityBlockLoaded(final LevelAccessor world, final BlockPos pos) {
         return isEntityChunkLoaded(world, pos.getX() >> 4, pos.getZ() >> 4);
     }
 
@@ -72,7 +72,7 @@ public class WorldChunkUtil {
      * @param z     chunk position
      * @return true if loaded
      */
-    public static boolean isEntityChunkLoaded(final WorldAccess world, final int x, final int z) {
+    public static boolean isEntityChunkLoaded(final LevelAccessor world, final int x, final int z) {
         return isEntityChunkLoaded(world, new ChunkPos(x, z));
     }
 
@@ -83,9 +83,9 @@ public class WorldChunkUtil {
      * @param pos   chunk position
      * @return true if loaded
      */
-    public static boolean isEntityChunkLoaded(final WorldAccess world, final ChunkPos pos) {
-        if (world instanceof ServerWorld serverWorld)
-            return isChunkLoaded(world, pos) && serverWorld.shouldTickEntity(pos.getStartPos());
+    public static boolean isEntityChunkLoaded(final LevelAccessor world, final ChunkPos pos) {
+        if (world instanceof ServerLevel serverWorld)
+            return isChunkLoaded(world, pos) && serverWorld.isPositionEntityTicking(pos.getWorldPosition());
         return isChunkLoaded(world, pos);
     }
 }

@@ -1,6 +1,6 @@
 package com.iafenvoy.uranus.client.model.tools;
 
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
 
 /**
  * This is a timer that can be used to easily animate models between poses. You have to set the number of
@@ -163,7 +163,7 @@ public class ControlledAnimation {
      * 1.0F using a sine function. It is fast in the beginning and slow in the end.
      */
     public float getAnimationProgressSin() {
-        return MathHelper.sin(1.57079632679F * this.getAnimationFraction());
+        return Mth.sin(1.57079632679F * this.getAnimationFraction());
     }
 
     /**
@@ -171,7 +171,7 @@ public class ControlledAnimation {
      * 1.0F using a sine function squared. It is very smooth.
      */
     public float getAnimationProgressSinSqrt() {
-        float result = MathHelper.sin(1.57079632679F * this.getAnimationFraction());
+        float result = Mth.sin(1.57079632679F * this.getAnimationFraction());
         return result * result;
     }
 
@@ -180,14 +180,14 @@ public class ControlledAnimation {
      * 1.0F using a sine function to the power of ten. It is slow in the beginning and fast in the end.
      */
     public float getAnimationProgressSinToTen() {
-        return (float) Math.pow(MathHelper.sin(1.57079632679F * this.getAnimationFraction()), 10);
+        return (float) Math.pow(Mth.sin(1.57079632679F * this.getAnimationFraction()), 10);
     }
 
     public float getAnimationProgressSinToTenWithoutReturn() {
         if (this.timerChange == -1) {
-            return MathHelper.sin(1.57079632679F * this.getAnimationFraction()) * MathHelper.sin(1.57079632679F * this.getAnimationFraction());
+            return Mth.sin(1.57079632679F * this.getAnimationFraction()) * Mth.sin(1.57079632679F * this.getAnimationFraction());
         }
-        return (float) Math.pow(MathHelper.sin(1.57079632679F * this.getAnimationFraction()), 10);
+        return (float) Math.pow(Mth.sin(1.57079632679F * this.getAnimationFraction()), 10);
     }
 
     /**
@@ -197,7 +197,7 @@ public class ControlledAnimation {
      * @param i is the power of the sine function.
      */
     public float getAnimationProgressSinPowerOf(int i) {
-        return (float) Math.pow(MathHelper.sin(1.57079632679F * this.getAnimationFraction()), i);
+        return (float) Math.pow(Mth.sin(1.57079632679F * this.getAnimationFraction()), i);
     }
 
     /**
@@ -247,7 +247,7 @@ public class ControlledAnimation {
      */
     public float getAnimationProgressTemporary() {
         float x = 6.28318530718F * this.getAnimationFraction();
-        return 0.5F - 0.5F * MathHelper.cos(x + MathHelper.sin(x));
+        return 0.5F - 0.5F * Mth.cos(x + Mth.sin(x));
     }
 
     /**
@@ -257,7 +257,7 @@ public class ControlledAnimation {
      */
     public float getAnimationProgressTemporaryFS() {
         float x = 3.14159265359F * this.getAnimationFraction();
-        return MathHelper.sin(x + MathHelper.sin(x));
+        return Mth.sin(x + Mth.sin(x));
     }
 
     /**
@@ -267,6 +267,6 @@ public class ControlledAnimation {
      */
     public float getAnimationProgressTemporaryInvesed() {
         float x = 6.28318530718F * this.getAnimationFraction();
-        return 0.5F + 0.5F * MathHelper.cos(x + MathHelper.sin(x));
+        return 0.5F + 0.5F * Mth.cos(x + Mth.sin(x));
     }
 }

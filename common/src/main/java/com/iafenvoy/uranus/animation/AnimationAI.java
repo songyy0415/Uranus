@@ -1,7 +1,7 @@
 package com.iafenvoy.uranus.animation;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ai.goal.Goal;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.goal.Goal;
 
 /**
  * @author iLexiconn
@@ -25,7 +25,7 @@ public abstract class AnimationAI<T extends Entity & IAnimatedEntity> extends Go
     }
 
     @Override
-    public boolean canStart() {
+    public boolean canUse() {
         if (this.isAutomatic()) {
             return this.entity.getAnimation() == this.getAnimation();
         }
@@ -41,7 +41,7 @@ public abstract class AnimationAI<T extends Entity & IAnimatedEntity> extends Go
     }
 
     @Override
-    public boolean shouldContinue() {
+    public boolean canContinueToUse() {
         return this.entity.getAnimationTick() < this.getAnimation().getDuration();
     }
 

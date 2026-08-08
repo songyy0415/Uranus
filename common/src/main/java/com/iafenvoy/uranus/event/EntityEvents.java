@@ -1,8 +1,8 @@
 package com.iafenvoy.uranus.event;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 
 public class EntityEvents {
     public static final Event<JoinWorld> ON_JOIN_WORLD = new Event<>(callbacks -> (entity, world) -> {
@@ -19,11 +19,11 @@ public class EntityEvents {
 
     @FunctionalInterface
     public interface JoinWorld {
-        boolean onJoinWorld(Entity entity, World world);
+        boolean onJoinWorld(Entity entity, Level world);
     }
 
     @FunctionalInterface
     public interface Tracking {
-        void onTrackingStart(Entity tracking, ServerPlayerEntity player);
+        void onTrackingStart(Entity tracking, ServerPlayer player);
     }
 }

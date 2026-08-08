@@ -3,8 +3,8 @@ package com.iafenvoy.uranus.object.entity.pathfinding.raycoms;
     All of this code is used with permission from Raycoms, one of the developers of the minecolonies project.
  */
 
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
 
 /**
  * Nodes used in pathfinding.
@@ -127,7 +127,7 @@ public class MNode implements Comparable<MNode> {
      *
      * @param byteBuf the buffer to load it from.
      */
-    public MNode(final PacketByteBuf byteBuf) {
+    public MNode(final FriendlyByteBuf byteBuf) {
         if (byteBuf.readBoolean())
             this.parent = new MNode(byteBuf.readBlockPos(), 0);
         this.pos = byteBuf.readBlockPos();
@@ -141,7 +141,7 @@ public class MNode implements Comparable<MNode> {
     /**
      * Serialize the Node to buf.
      */
-    public void serializeToBuf(final PacketByteBuf byteBuf) {
+    public void serializeToBuf(final FriendlyByteBuf byteBuf) {
         byteBuf.writeBoolean(this.parent != null);
         if (this.parent != null)
             byteBuf.writeBlockPos(this.parent.pos);

@@ -5,9 +5,8 @@ import com.iafenvoy.uranus.client.model.basic.BasicEntityModel;
 import com.iafenvoy.uranus.client.model.tabula.TextureOffset;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.MathHelper;
-
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import java.util.Map;
 
 /**
@@ -113,7 +112,7 @@ public abstract class AdvancedEntityModel<T extends Entity> extends BasicEntityM
     }
 
     private float calculateChainRotation(float speed, float degree, float swing, float swingAmount, float offset, int boxIndex) {
-        return MathHelper.cos(swing * (speed * this.movementScale) + offset * boxIndex) * swingAmount * (degree * this.movementScale);
+        return Mth.cos(swing * (speed * this.movementScale) + offset * boxIndex) * swingAmount * (degree * this.movementScale);
     }
 
     private float calculateChainOffset(double rootOffset, AdvancedModelBox... boxes) {
@@ -208,8 +207,8 @@ public abstract class AdvancedEntityModel<T extends Entity> extends BasicEntityM
      * @param f1     is the walk speed.
      */
     public float moveBox(float speed, float degree, boolean bounce, float f, float f1) {
-        if (bounce) return -MathHelper.abs((MathHelper.sin(f * speed) * f1 * degree));
-        else return MathHelper.sin(f * speed) * f1 * degree - f1 * degree;
+        if (bounce) return -Mth.abs((Mth.sin(f * speed) * f1 * degree));
+        else return Mth.sin(f * speed) * f1 * degree - f1 * degree;
     }
 
     public void setRotateAngle(AdvancedModelBox model, float x, float y, float z) {

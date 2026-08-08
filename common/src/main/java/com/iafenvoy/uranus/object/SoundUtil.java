@@ -1,38 +1,38 @@
 package com.iafenvoy.uranus.object;
 
-import net.minecraft.network.packet.s2c.play.StopSoundS2CPacket;
-import net.minecraft.registry.Registries;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.World;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.Level;
 
 public class SoundUtil {
-    public static void playSound(World world, double x, double y, double z, Identifier soundId, float volume, float pitch) {
-        SoundEvent soundEvent = Registries.SOUND_EVENT.get(soundId);
+    public static void playSound(Level world, double x, double y, double z, ResourceLocation soundId, float volume, float pitch) {
+        SoundEvent soundEvent = BuiltInRegistries.SOUND_EVENT.get(soundId);
         if (soundEvent == null) return;
-        if (world.isClient())
-            world.playSound(x, y, z, soundEvent, SoundCategory.NEUTRAL, volume, pitch, false);
+        if (world.isClientSide())
+            world.playLocalSound(x, y, z, soundEvent, SoundSource.NEUTRAL, volume, pitch, false);
         else
-            world.playSound(null, VecUtil.createBlockPos(x, y, z), soundEvent, SoundCategory.NEUTRAL, volume, pitch);
+            world.playSound(null, VecUtil.createBlockPos(x, y, z), soundEvent, SoundSource.NEUTRAL, volume, pitch);
     }
 
-    public static void playPlayerSound(World world, double x, double y, double z, Identifier soundId, float volume, float pitch) {
-        SoundEvent soundEvent = Registries.SOUND_EVENT.get(soundId);
+    public static void playPlayerSound(Level world, double x, double y, double z, ResourceLocation soundId, float volume, float pitch) {
+        SoundEvent soundEvent = BuiltInRegistries.SOUND_EVENT.get(soundId);
         if (soundEvent == null) return;
-        if (world.isClient())
-            world.playSound(x, y, z, soundEvent, SoundCategory.PLAYERS, volume, pitch, false);
+        if (world.isClientSide())
+            world.playLocalSound(x, y, z, soundEvent, SoundSource.PLAYERS, volume, pitch, false);
         else
-            world.playSound(null, VecUtil.createBlockPos(x, y, z), soundEvent, SoundCategory.PLAYERS, volume, pitch);
+            world.playSound(null, VecUtil.createBlockPos(x, y, z), soundEvent, SoundSource.PLAYERS, volume, pitch);
     }
 
-    public static void stopSound(World world, Identifier soundId) {
-        if (world instanceof ServerWorld serverLevel) {
-            StopSoundS2CPacket stopSoundPacket = new StopSoundS2CPacket(soundId, SoundCategory.NEUTRAL);
-            for (ServerPlayerEntity serverPlayer : serverLevel.getPlayers())
-                serverPlayer.networkHandler.sendPacket(stopSoundPacket);
+    public static void stopSound(Level world, ResourceLocation soundId) {
+        if (world instanceof ServerLevel serverLevel) {
+            ClientboundStopSoundPacket stopSoundPacket = new ClientboundStopSoundPacket(soundId, SoundSource.NEUTRAL);
+            for (ServerPlayer serverPlayer : serverLevel.players())
+                serverPlayer.connection.send(stopSoundPacket);
         }
     }
 }

@@ -2,7 +2,7 @@ package com.iafenvoy.uranus.client.model;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.entity.Entity;
+import net.minecraft.world.entity.Entity;
 
 @Environment(EnvType.CLIENT)
 @FunctionalInterface

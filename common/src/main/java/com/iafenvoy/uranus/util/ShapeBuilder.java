@@ -1,12 +1,11 @@
 package com.iafenvoy.uranus.util;
 
 import com.google.common.collect.AbstractIterator;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.random.Random;
-
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 
 public class ShapeBuilder {
     Iterable<BlockPos> blocks;
@@ -41,7 +40,7 @@ public class ShapeBuilder {
     public ShapeBuilder getAllInCutOffSphereMutable(int radiusX, int yCutOffMax, int yCutOffMin, int c1, int c2, int c3) {
         int r2 = radiusX * radiusX;
         this.blocks = () -> new AbstractIterator<>() {
-            private final BlockPos.Mutable mutablePos = new BlockPos.Mutable();
+            private final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
             private int currRX = radiusX;
             private int currRY = yCutOffMax;
             private int offset = 0;
@@ -81,20 +80,20 @@ public class ShapeBuilder {
         return this;
     }
 
-    public ShapeBuilder getAllInRandomlyDistributedRangeYCutOffSphereMutable(int maxRadiusX, int minRadiusX, int yCutOff, Random rand, BlockPos center) {
+    public ShapeBuilder getAllInRandomlyDistributedRangeYCutOffSphereMutable(int maxRadiusX, int minRadiusX, int yCutOff, RandomSource rand, BlockPos center) {
         return this.getAllInRandomlyDistributedRangeYCutOffSphereMutable(maxRadiusX, minRadiusX, yCutOff, rand, center.getX(), center.getY(), center.getZ());
     }
 
-    public ShapeBuilder getAllInRandomlyDistributedRangeYCutOffSphereMutable(int maxRadiusX, int minRadiusX, int ycutoffmin, Random rand, int c1, int c2, int c3) {
+    public ShapeBuilder getAllInRandomlyDistributedRangeYCutOffSphereMutable(int maxRadiusX, int minRadiusX, int ycutoffmin, RandomSource rand, int c1, int c2, int c3) {
         return this.getAllInRandomlyDistributedRangeYCutOffSphereMutable(maxRadiusX, minRadiusX, ycutoffmin, ycutoffmin, rand, c1, c2, c3);
     }
 
-    public ShapeBuilder getAllInRandomlyDistributedRangeYCutOffSphereMutable(int maxRadiusX, int minRadiusX, int yCutOffMax, int yCutOffMin, Random rand, int c1, int c2, int c3) {
+    public ShapeBuilder getAllInRandomlyDistributedRangeYCutOffSphereMutable(int maxRadiusX, int minRadiusX, int yCutOffMax, int yCutOffMin, RandomSource rand, int c1, int c2, int c3) {
         int maxr2 = maxRadiusX * maxRadiusX;
         int minr2 = minRadiusX * minRadiusX;
         float rDifference = (float) minRadiusX / maxRadiusX;
         this.blocks = () -> new AbstractIterator<>() {
-            private final BlockPos.Mutable mutablePos = new BlockPos.Mutable();
+            private final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
             private int currRX = maxRadiusX;
             private int currRY = yCutOffMax;
             private int offset = 0;
@@ -106,7 +105,7 @@ public class ShapeBuilder {
                     return this.endOfData();
                 } else {
                     int distance = this.distance(this.currRX, this.currRY, this.phase, this.offset);
-                    if (distance <= minr2 || distance <= maxr2 * MathHelper.clamp(rand.nextFloat(), rDifference, 1.0F)) {
+                    if (distance <= minr2 || distance <= maxr2 * Mth.clamp(rand.nextFloat(), rDifference, 1.0F)) {
                         BlockPos pos = this.mutablePos.set(c1 + this.currRX, c2 + this.currRY, c3 + this.phase * this.offset);
                         this.offset++;
                         return pos;
@@ -141,7 +140,7 @@ public class ShapeBuilder {
     public ShapeBuilder getAllInCircleMutable(int radius, int c1, int c2, int c3) {
         int r2 = radius * radius;
         this.blocks = () -> new AbstractIterator<>() {
-            private final BlockPos.Mutable mutablePos = new BlockPos.Mutable();
+            private final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
             private int totalAmount;
             private int currR = radius;
             private int offset = 0;

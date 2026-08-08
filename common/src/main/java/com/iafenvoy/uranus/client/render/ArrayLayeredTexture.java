@@ -1,18 +1,18 @@
 package com.iafenvoy.uranus.client.render;
 
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.texture.AbstractTexture;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.resource.Resource;
-import net.minecraft.resource.ResourceManager;
-import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import net.minecraft.client.renderer.texture.AbstractTexture;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
 
 public class ArrayLayeredTexture extends AbstractTexture {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -26,19 +26,19 @@ public class ArrayLayeredTexture extends AbstractTexture {
     public void load(ResourceManager manager) {
         Iterator<String> iterator = this.layeredTextureNames.iterator();
         String s = iterator.next();
-        Optional<Resource> iresource = manager.getResource(Identifier.tryParse(s));
+        Optional<Resource> iresource = manager.getResource(ResourceLocation.tryParse(s));
         if (iresource.isPresent())
             try {
-                NativeImage nativeimage = NativeImage.read(iresource.get().getInputStream());
+                NativeImage nativeimage = NativeImage.read(iresource.get().open());
                 while (iterator.hasNext()) {
                     String s1 = iterator.next();
                     if (s1 != null) {
-                        Optional<Resource> iresource1 = manager.getResource(Identifier.tryParse(s1));
+                        Optional<Resource> iresource1 = manager.getResource(ResourceLocation.tryParse(s1));
                         assert iresource1.isPresent();
-                        NativeImage nativeimage1 = NativeImage.read(iresource1.get().getInputStream());
+                        NativeImage nativeimage1 = NativeImage.read(iresource1.get().open());
                         for (int i = 0; i < Math.min(nativeimage1.getHeight(), nativeimage.getHeight()); i++)
                             for (int j = 0; j < Math.min(nativeimage1.getWidth(), nativeimage.getWidth()); j++)
-                                nativeimage.blend(j, i, nativeimage1.getColor(j, i));
+                                nativeimage.blendPixel(j, i, nativeimage1.getPixelRGBA(j, i));
                     }
                 }
                 if (!RenderSystem.isOnRenderThreadOrInit())
@@ -51,7 +51,7 @@ public class ArrayLayeredTexture extends AbstractTexture {
     }
 
     private void loadImage(NativeImage imageIn) {
-        TextureUtil.prepareImage(this.getGlId(), imageIn.getWidth(), imageIn.getHeight());
+        TextureUtil.prepareImage(this.getId(), imageIn.getWidth(), imageIn.getHeight());
         imageIn.upload(0, 0, 0, true);
     }
 }

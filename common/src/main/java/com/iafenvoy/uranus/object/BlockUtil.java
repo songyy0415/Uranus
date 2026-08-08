@@ -1,17 +1,17 @@
 package com.iafenvoy.uranus.object;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class BlockUtil {
     public static boolean isLadder(BlockState state) {
-        return state.isIn(BlockTags.CLIMBABLE);
+        return state.is(BlockTags.CLIMBABLE);
     }
 
     public static boolean isLadder(Block block) {
-        return isLadder(block.getDefaultState());
+        return isLadder(block.defaultBlockState());
     }
 
     public static boolean isBurning(BlockState block) {
