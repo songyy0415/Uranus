@@ -6,7 +6,7 @@ import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -26,12 +26,12 @@ public interface IArmorRendererBase<T extends LivingEntity> {
 
     HumanoidModel<T> getHumanoidArmorModel(LivingEntity living, ItemStack stack, EquipmentSlot slot, HumanoidModel<T> defaultModel);
 
-    default ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot) {
+    default Identifier getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot) {
         if (stack.getItem() instanceof ArmorItem armor) {
             List<ArmorMaterial.Layer> layers = armor.getMaterial().value().layers();
             if (!layers.isEmpty()) return layers.getFirst().texture(slot == EquipmentSlot.LEGS);
         }
-        return ResourceLocation.withDefaultNamespace("missingno");
+        return Identifier.withDefaultNamespace("missingno");
     }
 
     default void render(PoseStack matrices, MultiBufferSource vertexConsumers, LivingEntity entity, EquipmentSlot slot, int light, ItemStack stack, HumanoidModel<T> defaultModel) {

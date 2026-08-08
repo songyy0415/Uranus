@@ -8,7 +8,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.decoration.ArmorStand;
@@ -48,7 +48,7 @@ public class ArmorModelBase extends HumanoidModel<LivingEntity> {
             super.setupAnim(entityIn, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
     }
 
-    public void render(EquipmentSlot slot, PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, ResourceLocation texture) {
+    public void render(EquipmentSlot slot, PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, Identifier texture) {
         switch (slot) {
             case HEAD -> this.renderHelmet(matrices, vertexConsumers, light, stack, texture);
             case CHEST -> this.renderChestplate(matrices, vertexConsumers, light, stack, texture);
@@ -57,25 +57,25 @@ public class ArmorModelBase extends HumanoidModel<LivingEntity> {
         }
     }
 
-    public void renderHelmet(PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, ResourceLocation texture) {
+    public void renderHelmet(PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, Identifier texture) {
         VertexConsumer vertexConsumer = ItemRenderer.getArmorFoilBuffer(vertexConsumers, RenderType.armorCutoutNoCull(texture), stack.hasFoil());
         this.head.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
     }
 
-    public void renderChestplate(PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, ResourceLocation texture) {
+    public void renderChestplate(PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, Identifier texture) {
         VertexConsumer vertexConsumer = ItemRenderer.getArmorFoilBuffer(vertexConsumers, RenderType.armorCutoutNoCull(texture), stack.hasFoil());
         this.body.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
         this.leftArm.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
         this.rightArm.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
     }
 
-    public void renderLeggings(PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, ResourceLocation texture) {
+    public void renderLeggings(PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, Identifier texture) {
         VertexConsumer vertexConsumer = ItemRenderer.getArmorFoilBuffer(vertexConsumers, RenderType.armorCutoutNoCull(texture), stack.hasFoil());
         this.leftLeg.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
         this.rightLeg.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
     }
 
-    public void renderBoots(PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, ResourceLocation texture) {
+    public void renderBoots(PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, Identifier texture) {
         VertexConsumer vertexConsumer = ItemRenderer.getArmorFoilBuffer(vertexConsumers, RenderType.armorCutoutNoCull(texture), stack.hasFoil());
         this.leftLeg.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
         this.rightLeg.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);

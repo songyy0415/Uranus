@@ -10,7 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
@@ -26,14 +26,14 @@ public class ArrayLayeredTexture extends AbstractTexture {
     public void load(ResourceManager manager) {
         Iterator<String> iterator = this.layeredTextureNames.iterator();
         String s = iterator.next();
-        Optional<Resource> iresource = manager.getResource(ResourceLocation.tryParse(s));
+        Optional<Resource> iresource = manager.getResource(Identifier.tryParse(s));
         if (iresource.isPresent())
             try {
                 NativeImage nativeimage = NativeImage.read(iresource.get().open());
                 while (iterator.hasNext()) {
                     String s1 = iterator.next();
                     if (s1 != null) {
-                        Optional<Resource> iresource1 = manager.getResource(ResourceLocation.tryParse(s1));
+                        Optional<Resource> iresource1 = manager.getResource(Identifier.tryParse(s1));
                         assert iresource1.isPresent();
                         NativeImage nativeimage1 = NativeImage.read(iresource1.get().open());
                         for (int i = 0; i < Math.min(nativeimage1.getHeight(), nativeimage.getHeight()); i++)

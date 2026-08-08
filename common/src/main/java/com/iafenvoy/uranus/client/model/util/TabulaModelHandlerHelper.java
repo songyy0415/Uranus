@@ -16,18 +16,18 @@ import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.entity.Entity;
 
 public class TabulaModelHandlerHelper {
-    private static final Map<ResourceLocation, TabulaModelContainer> MODELS = new HashMap<>();
+    private static final Map<Identifier, TabulaModelContainer> MODELS = new HashMap<>();
 
     public static void reloadModel(ResourceManager manager) {
         MODELS.clear();
-        for (Map.Entry<ResourceLocation, Resource> entry : manager.listResources("models/tabula", id -> id.getPath().endsWith(".tbl")).entrySet()) {
-            ResourceLocation id = entry.getKey();
+        for (Map.Entry<Identifier, Resource> entry : manager.listResources("models/tabula", id -> id.getPath().endsWith(".tbl")).entrySet()) {
+            Identifier id = entry.getKey();
             try {
                 MODELS.put(id, TabulaModelHandler.INSTANCE.loadTabulaModel(getModelJsonStream(id.toString(), entry.getValue().open())));
             } catch (Exception e) {
@@ -38,22 +38,22 @@ public class TabulaModelHandlerHelper {
     }
 
     @Nullable
-    public static TabulaModelContainer getContainer(ResourceLocation id) {
+    public static TabulaModelContainer getContainer(Identifier id) {
         return MODELS.get(id);
     }
 
     @Nullable
-    public static <T extends Entity> TabulaModel<T> getModel(ResourceLocation id) {
+    public static <T extends Entity> TabulaModel<T> getModel(Identifier id) {
         return getModel(id, null);
     }
 
     @Nullable
-    public static <T extends Entity> TabulaModel<T> getModel(ResourceLocation id, Supplier<ITabulaModelAnimator<T>> tabulaAnimator) {
+    public static <T extends Entity> TabulaModel<T> getModel(Identifier id, Supplier<ITabulaModelAnimator<T>> tabulaAnimator) {
         return getModel(id, new MemorizeSupplier<>(tabulaAnimator));
     }
 
     @Nullable
-    public static <T extends Entity> TabulaModel<T> getModel(ResourceLocation id, MemorizeSupplier<ITabulaModelAnimator<T>> tabulaAnimator) {
+    public static <T extends Entity> TabulaModel<T> getModel(Identifier id, MemorizeSupplier<ITabulaModelAnimator<T>> tabulaAnimator) {
         try {
             String path = "models/tabula/" + id.getPath();
             if (!path.endsWith(".tbl")) path += ".tbl";
@@ -69,7 +69,7 @@ public class TabulaModelHandlerHelper {
     public static TabulaModelContainer loadTabulaModel(String path) throws IOException {
         if (!path.startsWith("/")) path = "/" + path;
         if (!path.endsWith(".tbl")) path = path + ".tbl";
-        InputStream stream = Minecraft.getInstance().getResourceManager().open(ResourceLocation.tryParse(path));
+        InputStream stream = Minecraft.getInstance().getResourceManager().open(Identifier.tryParse(path));
         return TabulaModelHandler.INSTANCE.loadTabulaModel(getModelJsonStream(path, stream));
     }
 

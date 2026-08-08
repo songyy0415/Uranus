@@ -5,7 +5,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import java.util.List;
 import java.util.function.Function;
@@ -20,7 +20,7 @@ public abstract class BasicModelBase<T extends Entity> extends EntityModel<T> {
         this(RenderType::entityCutoutNoCull);
     }
 
-    protected BasicModelBase(Function<ResourceLocation, RenderType> p_102613_) {
+    protected BasicModelBase(Function<Identifier, RenderType> p_102613_) {
         super(p_102613_);
     }
 
