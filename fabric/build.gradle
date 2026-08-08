@@ -9,6 +9,9 @@ architectury {
 
 loom {
     accessWidenerPath = project(":common").loom.accessWidenerPath
+    // Inject the common access widener into the fabric jar as `uranus.accesswidener`
+    // (referenced by fabric.mod.json), since loom-no-remap has no separate remap step.
+    injectAccessWidener(tasks.named('jar'))
 }
 
 configurations {
@@ -29,15 +32,17 @@ configurations {
 }
 
 dependencies {
-    modImplementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
+    // loom-no-remap (MC 26.2) has no `modImplementation` config — plain `api`/`implementation` is used.
+    api "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
 
     // Fabric API. This is technically optional, but you probably want it anyway.
-    modImplementation "net.fabricmc.fabric-api:fabric-api:$rootProject.fabric_api_version"
+    api "net.fabricmc.fabric-api:fabric-api:$rootProject.fabric_api_version"
 
-    // Architectury API. This is optional, and you can comment it out if you don't need it.
-    modImplementation(include("dev.architectury:architectury-fabric:$rootProject.architectury_api_version"))
+    // Architectury API (compiled against + bundled into the jar via shadowBundle).
+    implementation "dev.architectury:architectury-fabric:$rootProject.architectury_api_version"
+    shadowBundle "dev.architectury:architectury-fabric:$rootProject.architectury_api_version"
 
-    common(project(path: ':common', configuration: 'namedElements')) { transitive false }
+    common(project(path: ':common')) { transitive false }
     shadowBundle project(path: ':common', configuration: 'transformProductionFabric')
 }
 
@@ -49,11 +54,19 @@ processResources {
     }
 }
 
-shadowJar {
-    configurations = [project.configurations.shadowBundle]
-    archiveClassifier = 'dev-shadow'
+jar {
+    // loom-no-remap has no remapJar; the shadowJar below is the final artifact.
+    // The raw jar carries the injected access widener, which shadowJar copies.
+    archiveClassifier = 'raw'
 }
 
-remapJar {
-    input.set shadowJar.archiveFile
+shadowJar {
+    dependsOn jar
+    mainSpec.sourcePaths.clear()
+    from(zipTree(jar.archiveFile))
+    configurations = [project.configurations.shadowBundle]
+    archiveClassifier = null
+    zip64 = true
 }
+
+assemble.dependsOn shadowJar
