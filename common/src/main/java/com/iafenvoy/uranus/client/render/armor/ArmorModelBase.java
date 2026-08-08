@@ -1,83 +1,122 @@
 package com.iafenvoy.uranus.client.render.armor;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.state.ArmorStandRenderState;
+import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.item.ItemStack;
 
-public class ArmorModelBase extends HumanoidModel<LivingEntity> {
+/**
+ * Migrated to the 26.2 render-state architecture (P2.3-C3-A).
+ *
+ * <p>Migration notes (old API → new API, breaking change, reason):
+ * <ul>
+ *   <li>{@code extends HumanoidModel<LivingEntity>} → {@code extends HumanoidModel<HumanoidRenderState>}.
+ *       26.2 models are animated from the render state, never from the live entity.</li>
+ *   <li>{@code setupAnim(Entity, float, float, float, float, float)} →
+ *       {@code setupAnim(HumanoidRenderState)}; armor stand poses are read from the
+ *       {@link ArmorStandRenderState} public {@code Rotations} fields via the record
+ *       accessors {@code x()/y()/z()} ({@code getX()/getY()/getZ()} no longer exist).</li>
+ *   <li>{@code hat.copyFrom(head)} removed — in 26.2 {@code hat} is a child of {@code head}
+ *       ({@code HumanoidModel} constructor: {@code this.hat = this.head.getChild("hat")}),
+ *       so the hat inherits the head transform automatically.</li>
+ *   <li>{@code render(...)} / {@code renderHelmet/...} took {@code MultiBufferSource} +
+ *       {@code Identifier texture} → now {@code SubmitNodeCollector} + {@code HumanoidRenderState}
+ *       + {@code RenderType}. There is no {@code VertexConsumer} to hand out at submit time;
+ *       geometry is deferred to {@code ModelFeatureRenderer.prepareModel}, which calls
+ *       {@code setupAnim(state)} then the final {@code Model.renderToBuffer}. The render type is
+ *       supplied by the caller (the equipment texture derivation is C3-B work).</li>
+ *   <li>Glint is no longer merged into a single buffer via
+ *       {@code ItemRenderer.getArmorFoilBuffer}; it is a separate
+ *       {@code RenderTypes.armorEntityGlint()} submit.</li>
+ *   <li>{@code INNER_MODEL_OFFSET}/{@code OUTER_MODEL_OFFSET} kept for subclass offset math;
+ *       inner/outer selection itself is now expressed by {@code LayerType}.</li>
+ * </ul>
+ */
+@Environment(EnvType.CLIENT)
+public class ArmorModelBase extends HumanoidModel<HumanoidRenderState> {
     protected static final float INNER_MODEL_OFFSET = 0.38F;
     protected static final float OUTER_MODEL_OFFSET = 0.45F;
 
-    public ArmorModelBase(ModelPart p_170677_) {
-        super(p_170677_);
+    public ArmorModelBase(ModelPart root) {
+        super(root);
     }
 
     @Override
-    public void setupAnim(LivingEntity entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-        if (entityIn instanceof ArmorStand armorStand) {
-            this.head.xRot = ((float) Math.PI / 180F) * armorStand.getHeadPose().getX();
-            this.head.yRot = ((float) Math.PI / 180F) * armorStand.getHeadPose().getY();
-            this.head.zRot = ((float) Math.PI / 180F) * armorStand.getHeadPose().getZ();
-            this.body.xRot = ((float) Math.PI / 180F) * armorStand.getBodyPose().getX();
-            this.body.yRot = ((float) Math.PI / 180F) * armorStand.getBodyPose().getY();
-            this.body.zRot = ((float) Math.PI / 180F) * armorStand.getBodyPose().getZ();
-            this.leftArm.xRot = ((float) Math.PI / 180F) * armorStand.getLeftArmPose().getX();
-            this.leftArm.yRot = ((float) Math.PI / 180F) * armorStand.getLeftArmPose().getY();
-            this.leftArm.zRot = ((float) Math.PI / 180F) * armorStand.getLeftArmPose().getZ();
-            this.rightArm.xRot = ((float) Math.PI / 180F) * armorStand.getRightArmPose().getX();
-            this.rightArm.yRot = ((float) Math.PI / 180F) * armorStand.getRightArmPose().getY();
-            this.rightArm.zRot = ((float) Math.PI / 180F) * armorStand.getRightArmPose().getZ();
-            this.leftLeg.xRot = ((float) Math.PI / 180F) * armorStand.getLeftLegPose().getX();
-            this.leftLeg.yRot = ((float) Math.PI / 180F) * armorStand.getLeftLegPose().getY();
-            this.leftLeg.zRot = ((float) Math.PI / 180F) * armorStand.getLeftLegPose().getZ();
-            this.rightLeg.xRot = ((float) Math.PI / 180F) * armorStand.getRightLegPose().getX();
-            this.rightLeg.yRot = ((float) Math.PI / 180F) * armorStand.getRightLegPose().getY();
-            this.rightLeg.zRot = ((float) Math.PI / 180F) * armorStand.getRightLegPose().getZ();
-            this.hat.copyFrom(this.head);
-        } else
-            super.setupAnim(entityIn, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
-    }
-
-    public void render(EquipmentSlot slot, PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, Identifier texture) {
-        switch (slot) {
-            case HEAD -> this.renderHelmet(matrices, vertexConsumers, light, stack, texture);
-            case CHEST -> this.renderChestplate(matrices, vertexConsumers, light, stack, texture);
-            case LEGS -> this.renderLeggings(matrices, vertexConsumers, light, stack, texture);
-            case FEET -> this.renderBoots(matrices, vertexConsumers, light, stack, texture);
+    public void setupAnim(HumanoidRenderState state) {
+        super.setupAnim(state);
+        if (state instanceof ArmorStandRenderState armorStandState) {
+            this.head.xRot = (float) (Math.PI / 180.0) * armorStandState.headPose.x();
+            this.head.yRot = (float) (Math.PI / 180.0) * armorStandState.headPose.y();
+            this.head.zRot = (float) (Math.PI / 180.0) * armorStandState.headPose.z();
+            this.body.xRot = (float) (Math.PI / 180.0) * armorStandState.bodyPose.x();
+            this.body.yRot = (float) (Math.PI / 180.0) * armorStandState.bodyPose.y();
+            this.body.zRot = (float) (Math.PI / 180.0) * armorStandState.bodyPose.z();
+            this.leftArm.xRot = (float) (Math.PI / 180.0) * armorStandState.leftArmPose.x();
+            this.leftArm.yRot = (float) (Math.PI / 180.0) * armorStandState.leftArmPose.y();
+            this.leftArm.zRot = (float) (Math.PI / 180.0) * armorStandState.leftArmPose.z();
+            this.rightArm.xRot = (float) (Math.PI / 180.0) * armorStandState.rightArmPose.x();
+            this.rightArm.yRot = (float) (Math.PI / 180.0) * armorStandState.rightArmPose.y();
+            this.rightArm.zRot = (float) (Math.PI / 180.0) * armorStandState.rightArmPose.z();
+            this.leftLeg.xRot = (float) (Math.PI / 180.0) * armorStandState.leftLegPose.x();
+            this.leftLeg.yRot = (float) (Math.PI / 180.0) * armorStandState.leftLegPose.y();
+            this.leftLeg.zRot = (float) (Math.PI / 180.0) * armorStandState.leftLegPose.z();
+            this.rightLeg.xRot = (float) (Math.PI / 180.0) * armorStandState.rightLegPose.x();
+            this.rightLeg.yRot = (float) (Math.PI / 180.0) * armorStandState.rightLegPose.y();
+            this.rightLeg.zRot = (float) (Math.PI / 180.0) * armorStandState.rightLegPose.z();
         }
     }
 
-    public void renderHelmet(PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, Identifier texture) {
-        VertexConsumer vertexConsumer = ItemRenderer.getArmorFoilBuffer(vertexConsumers, RenderType.armorCutoutNoCull(texture), stack.hasFoil());
-        this.head.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
+    public void render(EquipmentSlot slot, PoseStack poseStack, SubmitNodeCollector collector, HumanoidRenderState state, int lightCoords, ItemStack stack, RenderType renderType) {
+        switch (slot) {
+            case HEAD -> this.renderHelmet(poseStack, collector, state, lightCoords, stack, renderType);
+            case CHEST -> this.renderChestplate(poseStack, collector, state, lightCoords, stack, renderType);
+            case LEGS -> this.renderLeggings(poseStack, collector, state, lightCoords, stack, renderType);
+            case FEET -> this.renderBoots(poseStack, collector, state, lightCoords, stack, renderType);
+        }
     }
 
-    public void renderChestplate(PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, Identifier texture) {
-        VertexConsumer vertexConsumer = ItemRenderer.getArmorFoilBuffer(vertexConsumers, RenderType.armorCutoutNoCull(texture), stack.hasFoil());
-        this.body.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
-        this.leftArm.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
-        this.rightArm.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
+    public void renderHelmet(PoseStack poseStack, SubmitNodeCollector collector, HumanoidRenderState state, int lightCoords, ItemStack stack, RenderType renderType) {
+        this.setArmorPartVisibility(EquipmentSlot.HEAD);
+        this.submitArmor(poseStack, collector, state, lightCoords, stack, renderType);
     }
 
-    public void renderLeggings(PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, Identifier texture) {
-        VertexConsumer vertexConsumer = ItemRenderer.getArmorFoilBuffer(vertexConsumers, RenderType.armorCutoutNoCull(texture), stack.hasFoil());
-        this.leftLeg.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
-        this.rightLeg.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
+    public void renderChestplate(PoseStack poseStack, SubmitNodeCollector collector, HumanoidRenderState state, int lightCoords, ItemStack stack, RenderType renderType) {
+        this.setArmorPartVisibility(EquipmentSlot.CHEST);
+        this.submitArmor(poseStack, collector, state, lightCoords, stack, renderType);
     }
 
-    public void renderBoots(PoseStack matrices, MultiBufferSource vertexConsumers, int light, ItemStack stack, Identifier texture) {
-        VertexConsumer vertexConsumer = ItemRenderer.getArmorFoilBuffer(vertexConsumers, RenderType.armorCutoutNoCull(texture), stack.hasFoil());
-        this.leftLeg.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
-        this.rightLeg.render(matrices, vertexConsumer, light, OverlayTexture.NO_OVERLAY, -1);
+    public void renderLeggings(PoseStack poseStack, SubmitNodeCollector collector, HumanoidRenderState state, int lightCoords, ItemStack stack, RenderType renderType) {
+        this.setArmorPartVisibility(EquipmentSlot.LEGS);
+        this.submitArmor(poseStack, collector, state, lightCoords, stack, renderType);
+    }
+
+    public void renderBoots(PoseStack poseStack, SubmitNodeCollector collector, HumanoidRenderState state, int lightCoords, ItemStack stack, RenderType renderType) {
+        this.setArmorPartVisibility(EquipmentSlot.FEET);
+        this.submitArmor(poseStack, collector, state, lightCoords, stack, renderType);
+    }
+
+    protected void setArmorPartVisibility(EquipmentSlot slot) {
+        this.head.visible = slot == EquipmentSlot.HEAD;
+        this.hat.visible = slot == EquipmentSlot.HEAD;
+        this.body.visible = slot == EquipmentSlot.CHEST;
+        this.leftArm.visible = slot == EquipmentSlot.CHEST;
+        this.rightArm.visible = slot == EquipmentSlot.CHEST;
+        this.leftLeg.visible = slot == EquipmentSlot.LEGS || slot == EquipmentSlot.FEET;
+        this.rightLeg.visible = slot == EquipmentSlot.LEGS || slot == EquipmentSlot.FEET;
+    }
+
+    protected void submitArmor(PoseStack poseStack, SubmitNodeCollector collector, HumanoidRenderState state, int lightCoords, ItemStack stack, RenderType renderType) {
+        collector.order(0).submitModel(this, state, poseStack, renderType, lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor, null);
+        if (stack.hasFoil())
+            collector.order(1).submitModel(this, state, poseStack, RenderTypes.armorEntityGlint(), lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor, null);
     }
 }
