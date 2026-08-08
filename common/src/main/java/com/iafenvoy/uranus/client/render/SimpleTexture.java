@@ -1,11 +1,15 @@
 package com.iafenvoy.uranus.client.render;
 
+import com.mojang.blaze3d.GpuFormat;
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.platform.TextureUtil;
+import com.mojang.blaze3d.systems.GpuDevice;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.AddressMode;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuTexture;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.server.packs.resources.ResourceManager;
 
 @Environment(EnvType.CLIENT)
 public class SimpleTexture extends AbstractTexture {
@@ -16,11 +20,18 @@ public class SimpleTexture extends AbstractTexture {
     }
 
     public void upload(boolean blur, boolean clamp) {
-        TextureUtil.prepareImage(this.getId(), 0, this.nativeImage.getWidth(), this.nativeImage.getHeight());
-        this.nativeImage.upload(0, 0, 0, 0, 0, this.nativeImage.getWidth(), this.nativeImage.getHeight(), blur, clamp, false, true);
-    }
-
-    @Override
-    public void load(ResourceManager manager) {
+        GpuDevice device = RenderSystem.getDevice();
+        this.close(); // release any previously uploaded GPU texture before re-creating
+        this.texture = device.createTexture(
+            "SimpleTexture",
+            GpuTexture.USAGE_COPY_DST | GpuTexture.USAGE_TEXTURE_BINDING,
+            GpuFormat.RGBA8_UNORM,
+            this.nativeImage.getWidth(), this.nativeImage.getHeight(), 1, 1
+        );
+        AddressMode addressMode = clamp ? AddressMode.CLAMP_TO_EDGE : AddressMode.REPEAT;
+        FilterMode minMag = blur ? FilterMode.LINEAR : FilterMode.NEAREST;
+        this.sampler = RenderSystem.getSamplerCache().getSampler(addressMode, addressMode, minMag, minMag, false);
+        this.textureView = device.createTextureView(this.texture);
+        device.createCommandEncoder().writeToTexture(this.texture, this.nativeImage);
     }
 }

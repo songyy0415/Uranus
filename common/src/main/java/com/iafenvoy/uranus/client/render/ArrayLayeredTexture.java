@@ -1,57 +1,96 @@
 package com.iafenvoy.uranus.client.render;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.platform.TextureUtil;
-import com.mojang.blaze3d.systems.RenderSystem;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import net.minecraft.client.renderer.texture.AbstractTexture;
+import com.mojang.logging.LogUtils;
+import net.minecraft.client.renderer.texture.ReloadableTexture;
+import net.minecraft.client.renderer.texture.TextureContents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.util.ARGB;
+import org.slf4j.Logger;
 
-public class ArrayLayeredTexture extends AbstractTexture {
-    private static final Logger LOGGER = LogManager.getLogger();
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
+
+public class ArrayLayeredTexture extends ReloadableTexture {
+    private static final Logger LOGGER = LogUtils.getLogger();
     public final List<String> layeredTextureNames;
 
     public ArrayLayeredTexture(List<String> textureNames) {
+        super(deriveResourceId(textureNames));
         this.layeredTextureNames = textureNames;
     }
 
-    @Override
-    public void load(ResourceManager manager) {
-        Iterator<String> iterator = this.layeredTextureNames.iterator();
-        String s = iterator.next();
-        Optional<Resource> iresource = manager.getResource(Identifier.tryParse(s));
-        if (iresource.isPresent())
-            try {
-                NativeImage nativeimage = NativeImage.read(iresource.get().open());
-                while (iterator.hasNext()) {
-                    String s1 = iterator.next();
-                    if (s1 != null) {
-                        Optional<Resource> iresource1 = manager.getResource(Identifier.tryParse(s1));
-                        assert iresource1.isPresent();
-                        NativeImage nativeimage1 = NativeImage.read(iresource1.get().open());
-                        for (int i = 0; i < Math.min(nativeimage1.getHeight(), nativeimage.getHeight()); i++)
-                            for (int j = 0; j < Math.min(nativeimage1.getWidth(), nativeimage.getWidth()); j++)
-                                nativeimage.blendPixel(j, i, nativeimage1.getPixelRGBA(j, i));
-                    }
-                }
-                if (!RenderSystem.isOnRenderThreadOrInit())
-                    RenderSystem.recordRenderCall(() -> this.loadImage(nativeimage));
-                else this.loadImage(nativeimage);
-            } catch (Exception exception) {
-                LOGGER.error("Couldn't load layered image", exception);
-            }
-        else LOGGER.error("Couldn't load layered image");
+    private static Identifier deriveResourceId(List<String> textureNames) {
+        if (textureNames != null && !textureNames.isEmpty()) {
+            Identifier id = Identifier.tryParse(textureNames.get(0));
+            if (id != null) return id;
+        }
+        return Identifier.withDefaultNamespace("array_layered");
     }
 
-    private void loadImage(NativeImage imageIn) {
-        TextureUtil.prepareImage(this.getId(), imageIn.getWidth(), imageIn.getHeight());
-        imageIn.upload(0, 0, 0, true);
+    @Override
+    public TextureContents loadContents(ResourceManager manager) throws IOException {
+        Iterator<String> iterator = this.layeredTextureNames.iterator();
+        String baseName = iterator.next();
+        Optional<Resource> baseResource = manager.getResource(Identifier.tryParse(baseName));
+        if (baseResource.isEmpty()) {
+            LOGGER.error("Couldn't load layered image");
+            return TextureContents.createMissing();
+        }
+        NativeImage base;
+        try (InputStream in = baseResource.get().open()) {
+            base = NativeImage.read(in);
+        } catch (IOException e) {
+            LOGGER.error("Couldn't load layered image", e);
+            return TextureContents.createMissing();
+        }
+        while (iterator.hasNext()) {
+            String layerName = iterator.next();
+            if (layerName != null) {
+                Optional<Resource> layerResource = manager.getResource(Identifier.tryParse(layerName));
+                if (layerResource.isEmpty()) {
+                    base.close();
+                    LOGGER.error("Couldn't load layered image");
+                    return TextureContents.createMissing();
+                }
+                try (InputStream in = layerResource.get().open(); NativeImage layer = NativeImage.read(in)) {
+                    blendLayers(base, layer);
+                } catch (IOException e) {
+                    base.close();
+                    LOGGER.error("Couldn't load layered image", e);
+                    return TextureContents.createMissing();
+                }
+            }
+        }
+        // metadata null -> REPEAT/NEAREST sampler via apply(), matching the old default
+        return new TextureContents(base, null);
+    }
+
+    private static void blendLayers(NativeImage base, NativeImage layer) {
+        for (int i = 0; i < Math.min(layer.getHeight(), base.getHeight()); i++)
+            for (int j = 0; j < Math.min(layer.getWidth(), base.getWidth()); j++)
+                base.setPixel(j, i, blendPixel(layer.getPixel(j, i), base.getPixel(j, i)));
+    }
+
+    /**
+     * Replicates the 1.21.1 NativeImage.blendPixel math byte-for-byte. The old code read/wrote raw
+     * ABGR ints and, for every channel including alpha, computed out = src*factor + dst*(1-factor)
+     * with factor = srcAlpha, clamped to 1.0, then *255 truncated. 26.2 getPixel/setPixel are ARGB
+     * based (each internally converts through the same raw ABGR bytes), so blending matching ARGB
+     * channels here produces identical physical bytes to the old ABGR blend; no manual R/B swap.
+     */
+    private static int blendPixel(int src, int dst) {
+        float factor = ARGB.alpha(src) / 255.0F;
+        float inv = 1.0F - factor;
+        int outAlpha = (int) (Math.min(ARGB.alpha(src) * factor + ARGB.alpha(dst) * inv, 1.0F) * 255.0F);
+        int outRed = (int) (Math.min(ARGB.red(src) * factor + ARGB.red(dst) * inv, 1.0F) * 255.0F);
+        int outGreen = (int) (Math.min(ARGB.green(src) * factor + ARGB.green(dst) * inv, 1.0F) * 255.0F);
+        int outBlue = (int) (Math.min(ARGB.blue(src) * factor + ARGB.blue(dst) * inv, 1.0F) * 255.0F);
+        return ARGB.color(outAlpha, outRed, outGreen, outBlue);
     }
 }
