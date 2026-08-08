@@ -2,18 +2,18 @@ package com.iafenvoy.uranus.object.item;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.minecraft.core.Holder;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ArmorMaterial;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.equipment.ArmorMaterial;
+import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.level.Level;
 
 @Deprecated(forRemoval = true)
-public abstract class ArmorWithTickItem extends ArmorItem {
+public abstract class ArmorWithTickItem extends Item {
     private static final List<ArmorWithTickItem> NEED_TO_TICK = new ArrayList<>();
 
-    public ArmorWithTickItem(Holder<ArmorMaterial> material, Type slot, Properties settings) {
-        super(material, slot, settings);
+    public ArmorWithTickItem(ArmorMaterial material, ArmorType slot, Properties settings) {
+        super(settings.humanoidArmor(material, slot));
         NEED_TO_TICK.add(this);
     }
 
