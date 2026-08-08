@@ -3,11 +3,11 @@ package com.iafenvoy.uranus.object.item;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Tier;
+import net.minecraft.world.item.ToolMaterial;
 
 @Deprecated(forRemoval = true)
 public class FoilSwordItemBase extends SwordItemBase {
-    public FoilSwordItemBase(Tier toolMaterial, Properties settings) {
+    public FoilSwordItemBase(ToolMaterial toolMaterial, Properties settings) {
         super(toolMaterial, settings);
     }
 
