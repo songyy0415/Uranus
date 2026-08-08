@@ -52,6 +52,14 @@ processResources {
     filesMatching('fabric.mod.json') {
         expand version: project.version
     }
+
+    // The access widener and mixin config live in the common module's resources.
+    // Loom's dev launcher requires files referenced by fabric.mod.json (accessWidener,
+    // mixins) to be inside the mod's own files (fabric/build/resources/main), not the
+    // common jar on the classpath — copy them so both dev runs and the production jar
+    // resolve them. Single source of truth stays in :common.
+    from(project(':common').file('src/main/resources/uranus.accesswidener'))
+    from(project(':common').file('src/main/resources/uranus.mixins.json'))
 }
 
 jar {

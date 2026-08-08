@@ -36,7 +36,7 @@ public abstract class LivingEntityMixin extends Entity {
     }
 
     @Inject(method = "causeFallDamage", at = @At("HEAD"))
-    public void onEntityFall(float fallDistance, float multiplier, DamageSource source, CallbackInfoReturnable<Boolean> cir) {
-        LivingEntityEvents.FALL.invoker().onFall((LivingEntity) (Object) this, fallDistance, multiplier, source);
+    public void onEntityFall(double fallDistance, float multiplier, DamageSource source, CallbackInfoReturnable<Boolean> cir) {
+        LivingEntityEvents.FALL.invoker().onFall((LivingEntity) (Object) this, (float) fallDistance, multiplier, source);
     }
 }
