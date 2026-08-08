@@ -19,7 +19,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 
 public class TabulaModelHandlerHelper {
     private static final Map<Identifier, TabulaModelContainer> MODELS = new HashMap<>();
@@ -43,17 +43,17 @@ public class TabulaModelHandlerHelper {
     }
 
     @Nullable
-    public static <T extends Entity> TabulaModel<T> getModel(Identifier id) {
+    public static <T extends LivingEntityRenderState> TabulaModel<T> getModel(Identifier id) {
         return getModel(id, null);
     }
 
     @Nullable
-    public static <T extends Entity> TabulaModel<T> getModel(Identifier id, Supplier<ITabulaModelAnimator<T>> tabulaAnimator) {
+    public static <T extends LivingEntityRenderState> TabulaModel<T> getModel(Identifier id, Supplier<ITabulaModelAnimator<T>> tabulaAnimator) {
         return getModel(id, new MemorizeSupplier<>(tabulaAnimator));
     }
 
     @Nullable
-    public static <T extends Entity> TabulaModel<T> getModel(Identifier id, MemorizeSupplier<ITabulaModelAnimator<T>> tabulaAnimator) {
+    public static <T extends LivingEntityRenderState> TabulaModel<T> getModel(Identifier id, MemorizeSupplier<ITabulaModelAnimator<T>> tabulaAnimator) {
         try {
             String path = "models/tabula/" + id.getPath();
             if (!path.endsWith(".tbl")) path += ".tbl";

@@ -5,25 +5,36 @@ import com.iafenvoy.uranus.client.model.basic.BasicEntityModel;
 import com.iafenvoy.uranus.client.model.tabula.TextureOffset;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.Entity;
 import java.util.Map;
 
 /**
  * An enhanced ModelBase
  *
+ * <p>Migrated to the 26.2 render-state architecture: the generic now names the
+ * renderer-extracted {@link EntityRenderState} instead of the live {@code Entity},
+ * and (like every 26.2 {@code Model}) the constructor takes the {@code ModelPart}
+ * root that carries the model's geometry. The animation helpers are pure float math
+ * over {@link AdvancedModelBox} — they never read an Entity, so the formulas are
+ * preserved unchanged; the entity-driven inputs they previously received
+ * (limb swing, age in ticks, head rotation) are now provided by {@code setupAnim}
+ * from the render state fields ({@code state.walkAnimationPos}, {@code state.ageInTicks},
+ * {@code state.yRot}, {@code state.xRot}, ...).
+ *
  * @author gegy1000
  * @since 1.0.0
  */
 @Environment(EnvType.CLIENT)
-public abstract class AdvancedEntityModel<T extends Entity> extends BasicEntityModel<T> {
+public abstract class AdvancedEntityModel<T extends EntityRenderState> extends BasicEntityModel<T> {
     private final Map<String, TextureOffset> modelTextureMap = Maps.newHashMap();
     public int texWidth = 32;
     public int texHeight = 32;
     private float movementScale = 1.0F;
 
-    public AdvancedEntityModel() {
-        super();
+    public AdvancedEntityModel(ModelPart root) {
+        super(root);
     }
 
     public void updateDefaultPose() {
