@@ -39,7 +39,10 @@ import net.minecraft.world.level.ItemLike;
  */
 @Environment(EnvType.CLIENT)
 public interface IArmorRendererBase<S extends HumanoidRenderState> {
-    HashMap<ItemLike, IArmorRendererBase<? extends HumanoidRenderState>> RENDERERS = new HashMap<>();
+    // Value type pinned to the concrete HumanoidRenderState (P2.3-C3-R §11/§B4, user-authorized
+    // minimal correction): a wildcard would make type-safe invocation impossible for consumers
+    // like ArmorFeatureRendererMixin, forcing an unchecked cast.
+    HashMap<ItemLike, IArmorRendererBase<HumanoidRenderState>> RENDERERS = new HashMap<>();
 
     HumanoidModel<S> getHumanoidArmorModel(S state, ItemStack stack, EquipmentSlot slot, HumanoidModel<S> defaultModel);
 
@@ -57,7 +60,7 @@ public interface IArmorRendererBase<S extends HumanoidRenderState> {
             collector.order(1).submitModel(armorModel, state, poseStack, RenderTypes.armorEntityGlint(), lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor, null);
     }
 
-    static <S extends HumanoidRenderState> void register(IArmorRendererBase<S> renderer, ItemLike... items) {
+    static void register(IArmorRendererBase<HumanoidRenderState> renderer, ItemLike... items) {
         Arrays.stream(items).forEach(x -> RENDERERS.put(x, renderer));
     }
 }
