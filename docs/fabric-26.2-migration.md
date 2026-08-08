@@ -436,3 +436,73 @@ Gradle/依赖 → MC 版本 → Java → Loom → Architectury → common 编译
 - **P3 — Mixin 适配**：`@Mixin(BlockEntityWithoutLevelRenderer)` 等目标签名随渲染重写同步更新
 - **P4 — 渲染系统重写**：按 `EntityRenderState` / `submit()` / `SubmitNodeCollector` 模型重写实体模型与护甲渲染
 - **P5+**：寻路（Tuple/DebugPackets 替代）、datagen、resources、运行时验证（runClient/runServer）
+
+---
+
+# P2.1 阶段报告 — ResourceLocation → Identifier
+
+## 状态
+✅ 完成（独立 commit `d31e2c9 fix: migrate ResourceLocation to Identifier`，15 文件、+46/−45，无无关改动）
+
+## 解决的错误
+| 类别 | 修改前 | 修改后 |
+|---|---|---|
+| ResourceLocation / Identifier | 37 | **0** |
+| JsonUtils 注册级联（`Registry.get` 返回类型变化） | 1 | 0 |
+| 合计（`:common:compileJava`） | 100 | 100 |
+
+> 修改后合计仍为 100：`ResourceLocation` 类错误已全部消除，但重命名使 javac 类型检查进一步深入到此前被 import 错误掩盖的类，**暴露了约 28 个本就在 26.2 中失效的渲染/物品潜在错误**（见「剩余错误」）。这不是回归，是错误面清空后显露的真实待迁移项。
+
+## 修改文件（15，全部在 `common/src/main/java/com/iafenvoy/uranus/`）
+- `client/model/basic/BasicEntityModel.java`（import + `Function<Identifier, RenderType>`）
+- `client/model/tabula/JsonUtils.java`（**唯一合法级联修复**：`Registry.get` 返回 `Optional<Holder.Reference<T>>`）
+- `client/model/tools/BasicModelBase.java`（import + `Function<Identifier, RenderType>`）
+- `client/model/util/TabulaModelHandlerHelper.java`（Map / Map.Entry / 局部变量 / 参数 / `tryParse`）
+- `client/render/ArrayLayeredTexture.java`（`Identifier.tryParse(s)` ×2）
+- `client/render/EntityTextureProvider.java` / `EntityWithMarkerTextureProvider.java`（接口返回类型）
+- `client/render/armor/ArmorModelBase.java` / `IArmorRenderHelper.java` / `IArmorRendererBase.java` / `IArmorTextureProvider.java`（参数/返回类型）
+- `network/AnimationPayload.java`（`fromNamespaceAndPath` → `new Type<>(...)`）
+- `object/IdUtil.java` / `object/SoundUtil.java` / `object/item/ToolMaterialUtil.java`（`parse("")`、`fromNamespaceAndPath`）
+
+## 主要 API 变化（26.2 `net.minecraft.resources.Identifier`）
+| 旧（ResourceLocation） | 新（Identifier） |
+|---|---|
+| `new ResourceLocation(ns, path)` | `Identifier.fromNamespaceAndPath(ns, path)`（构造器私有） |
+| `ResourceLocation.of(...)` 返回 `Optional` | `Identifier.tryBuild(...)` 返回 `@Nullable` |
+| `ResourceLocation.parse(s)` | `Identifier.parse(s)`（语义一致，空串/非法路径行为相同） |
+| `ResourceLocation.tryParse(s)` | `Identifier.tryParse(s)`（语义一致） |
+| `ResourceLocation.withDefaultNamespace("missingno")` | `Identifier.withDefaultNamespace("missingno")`（语义一致） |
+| `getNamespace()` / `getPath()` | `Identifier.getNamespace()` / `getPath()`（一致） |
+| `CODEC` / `STREAM_CODEC` | `Identifier.CODEC` / `STREAM_CODEC`（一致） |
+
+**注册表侧（级联）**：26.2 `Registry.get(Identifier)` 返回 `Optional<Holder.Reference<T>>`（不再返回 `@Nullable T`）。`JsonUtils.getByNameOrId` 用 `.map(Holder.Reference::value).orElse(null)` 适配。
+
+## 行为考虑
+- 纯机械重命名，`parse("")`、`withDefaultNamespace("missingno")`、`tryParse` 的默认命名空间与失败语义与 1.21.1 完全一致，**行为无变化**。
+- **潜伏项（本阶段未动，避免扩大范围）**：`SoundUtil.java:14/23` 的 `BuiltInRegistries.SOUND_EVENT.get(Identifier)` 同受 `Registry.get` 返回类型变化影响，当前被 javac 类型检查遮蔽（非错误）。后续阶段会浮出，需同样以 `.map(Holder.Reference::value)` 处理。
+
+## 验证命令
+- `git diff --stat` / `git diff`：确认仅 15 个 common Java 文件变更
+- `./gradlew :common:compileJava --offline > build-p21-final.log`：错误计数 100 → 100
+- `grep -c "ResourceLocation" build-p21-final.log` = **0**（ResourceLocation 类错误归零）
+- `grep "JsonUtils.java:38" build-p21-final.log` = **0**（级联已修复）
+
+## 验证结果
+- `ResourceLocation` 错误 **37 → 0**，全部调用点逐一核对（无 `new ResourceLocation`、无 `.of()`、无行为改变）
+- 唯一的直接级联错误（`JsonUtils:38`）已修复并验证
+- commit 独立、可审查，未混入渲染/物品/寻路/mixin 改动
+
+## 剩余错误（100 = 0 ResourceLocation + 100 待迁移项）
+| 类别 | 错误数 | 说明 |
+|---|---|---|
+| Rendering（渲染重写） | ~66 | MultiBufferSource 18、RenderType 7、getX/getY/getZ（EulerAngle）16、getTimer 3、ItemTransform(s) 4、ItemRenderer 2、PlayerModel 2、BlockEntityWithoutLevelRenderer 1，含重命名后新暴露的潜在渲染错误 |
+| ArmorMaterial / ToolMaterial（物品重构） | ~17 | Tier 7、ArmorMaterial 7、ArmorItem 2、SwordItem 1、Properties/Type 等 |
+| Tuple / DebugPackets（寻路） | ~5 | 26.2 已移除，下一阶段需研究旧用法→等效 API |
+| MobSpawnType | 1 | 26.2 已移除 |
+| Level.isClientSide | 1 | `level().isClientSide()` |
+| Mixin 目标 | 1 | `@Mixin(BlockEntityWithoutLevelRenderer)` 随渲染重写更新 |
+
+## 下一阶段（等待指令，不自行进入）
+- **P2.2 — 物品/工具重构**：`ArmorMaterial`→`net.minecraft.world.item.equipment.ArmorMaterial`（record + `Item.Properties.humanoidArmor`）、`Tier`→`ToolMaterial`、`SwordItem` 替代（会触碰 `fabric/.../ArmorFeatureRendererMixin` 的 mixin 目标串，需一并规划）
+- **P4 — 渲染系统重写**（暂缓）：`EntityRenderState` / `submit()` / `SubmitNodeCollector`
+- 寻路（Tuple/DebugPackets）、MobSpawnType、isClientSide、P3 mixin 目标、datagen、resources、运行时验证
