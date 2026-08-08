@@ -16,7 +16,6 @@
   ],
   "client": [
     "ArmorFeatureRendererMixin",
-    "BuiltinModelItemRendererMixin",
     "ClientWorldMixin",
     "ModelLoaderMixin"
   ],
