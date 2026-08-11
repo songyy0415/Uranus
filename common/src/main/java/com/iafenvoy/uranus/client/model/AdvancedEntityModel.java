@@ -8,6 +8,8 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.util.Mth;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.Map;
 
 /**
@@ -264,4 +266,25 @@ public abstract class AdvancedEntityModel<T extends EntityRenderState> extends B
         Return a list of all parts needed to be reset every tick.
      */
     public abstract Iterable<AdvancedModelBox> getAllParts();
+
+    /**
+     * Draws the {@link AdvancedModelBox} geometry tree into a {@link VertexConsumer}.
+     *
+     * <p>26.2 {@code Model.renderToBuffer} is final and renders only the single
+     * {@code ModelPart root}, so a hand-built {@code AdvancedModelBox} hierarchy cannot
+     * be drawn through the vanilla model path. This walks the top-level boxes (those
+     * whose {@link AdvancedModelBox#getParent()} is {@code null}) and delegates to each
+     * box's own {@code render(PoseStack, VertexConsumer, int, int, int)}, which
+     * recursively draws its children and its {@code cubeList} quads — the exact geometry
+     * the legacy renderer drew. Call this from a renderer via
+     * {@code SubmitNodeCollector.submitCustomGeometry} to feed the boxes into the 26.2
+     * deferred render graph.
+     */
+    public void renderPartsToBuffer(PoseStack poseStack, VertexConsumer consumer, int light, int overlay, int color) {
+        for (AdvancedModelBox box : this.getAllParts()) {
+            if (box.getParent() == null) {
+                box.render(poseStack, consumer, light, overlay, color);
+            }
+        }
+    }
 }
