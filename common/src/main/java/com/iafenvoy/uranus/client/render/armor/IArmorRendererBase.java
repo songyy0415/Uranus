@@ -33,8 +33,12 @@ import net.minecraft.world.level.ItemLike;
  *       {@code setupAnim(state)} when {@code ModelFeatureRenderer.prepareModel} resolves the
  *       deferred submit. There is no {@code VertexConsumer} at submit time, so
  *       {@code model.renderToBuffer} is not called here ({@code Model.renderToBuffer} is final).</li>
- *   <li>Glint is a separate {@code RenderTypes.armorEntityGlint()} submit instead of
- *       {@code ItemRenderer.getArmorFoilBuffer}.</li>
+ *   <li>Glint is a separate glint submit instead of {@code ItemRenderer.getArmorFoilBuffer}. In 26.2
+ *       that was {@code RenderTypes.armorEntityGlint()}; 26.3 removed the no-argument method and
+ *       {@code RenderTypes.trimmedArmorGlint()} is the item-for-item equivalent (same {@code GLINT}
+ *       pipeline, {@code ENCHANTED_GLINT_ARMOR} texture, {@code ARMOR_ENTITY_GLINT_TEXTURING} and
+ *       {@code VIEW_OFFSET_Z_LAYERING}, plus {@code withForcedSolidModelPhase()} for correct
+ *       solid-phase submission).</li>
  * </ul>
  */
 @Environment(EnvType.CLIENT)
@@ -55,9 +59,9 @@ public interface IArmorRendererBase<S extends HumanoidRenderState> {
         armorModel.rightArm.visible = slot == EquipmentSlot.CHEST;
         armorModel.leftLeg.visible = slot == EquipmentSlot.LEGS || slot == EquipmentSlot.FEET;
         armorModel.rightLeg.visible = slot == EquipmentSlot.LEGS || slot == EquipmentSlot.FEET;
-        collector.order(0).submitModel(armorModel, state, poseStack, renderType, lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor, null);
+        collector.order(0).submitModel(armorModel, state, poseStack, renderType, lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
         if (stack.hasFoil())
-            collector.order(1).submitModel(armorModel, state, poseStack, RenderTypes.armorEntityGlint(), lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor, null);
+            collector.order(1).submitModel(armorModel, state, poseStack, RenderTypes.trimmedArmorGlint(), lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
     }
 
     static void register(IArmorRendererBase<HumanoidRenderState> renderer, ItemLike... items) {

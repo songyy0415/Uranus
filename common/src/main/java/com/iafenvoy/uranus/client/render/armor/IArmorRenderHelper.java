@@ -28,7 +28,12 @@ import net.minecraft.world.item.ItemStack;
  *   <li>{@code ItemRenderer.getArmorFoilBuffer(..., texture, hasFoil)} → the caller supplies a
  *       {@link RenderType}; the texture is data-driven (Equippable asset → equipment JSON → PNG,
  *       C3-B), so the old {@code Identifier} SPI parameter is not re-introduced. Glint is a separate
- *       {@code RenderTypes.armorEntityGlint()} submit after the cutout one, one per model.</li>
+ *       submit after the cutout one, one per model. In 26.2 that used
+ *       {@code RenderTypes.armorEntityGlint()}; 26.3 removed the no-argument method and
+ *       {@code RenderTypes.trimmedArmorGlint()} is the item-for-item equivalent (same {@code GLINT}
+ *       pipeline, {@code ENCHANTED_GLINT_ARMOR} texture, {@code ARMOR_ENTITY_GLINT_TEXTURING} and
+ *       {@code VIEW_OFFSET_Z_LAYERING}, plus {@code withForcedSolidModelPhase()} for correct
+ *       solid-phase submission).</li>
  *   <li>{@code translateToChest(PoseStack, PlayerModel<AbstractClientPlayer>, AbstractClientPlayer)} →
  *       {@code translateToChest(PoseStack, HumanoidModel<S>, S)}. {@code PlayerModel} is no longer
  *       generic and is bound to {@code AvatarRenderState}; the helper is driven from the render
@@ -55,18 +60,18 @@ public interface IArmorRenderHelper {
      * @param renderType the render type to apply (armor texture render type supplied by the caller)
      */
     static <S extends EntityRenderState> void renderPart(PoseStack matrices, SubmitNodeCollector collector, S state, int light, ItemStack stack, Model<? super S> model, RenderType renderType) {
-        collector.order(0).submitModel(model, state, matrices, renderType, light, OverlayTexture.NO_OVERLAY, state.outlineColor, null);
+        collector.order(0).submitModel(model, state, matrices, renderType, light, OverlayTexture.NO_OVERLAY, state.outlineColor);
         if (stack.hasFoil())
-            collector.order(1).submitModel(model, state, matrices, RenderTypes.armorEntityGlint(), light, OverlayTexture.NO_OVERLAY, state.outlineColor, null);
+            collector.order(1).submitModel(model, state, matrices, RenderTypes.trimmedArmorGlint(), light, OverlayTexture.NO_OVERLAY, state.outlineColor);
     }
 
     // From trinkets
     static <S extends HumanoidRenderState> void translateToChest(PoseStack matrices, HumanoidModel<S> model, S state) {
         if (state.isCrouching && !state.isPassenger && !state.isVisuallySwimming) {
             matrices.translate(0.0F, 0.2F, 0.0F);
-            matrices.mulPose(Axis.XP.rotation(model.body.xRot));
+            matrices.rotate(Axis.XP.rotation(model.body.xRot));
         }
-        matrices.mulPose(Axis.YP.rotation(model.body.yRot));
+        matrices.rotate(Axis.YP.rotation(model.body.yRot));
         matrices.translate(0.0F, 0.4F, -0.16F);
     }
 }

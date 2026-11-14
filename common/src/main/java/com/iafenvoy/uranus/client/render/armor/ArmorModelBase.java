@@ -35,8 +35,12 @@ import net.minecraft.world.item.ItemStack;
  *       {@code setupAnim(state)} then the final {@code Model.renderToBuffer}. The render type is
  *       supplied by the caller (the equipment texture derivation is C3-B work).</li>
  *   <li>Glint is no longer merged into a single buffer via
- *       {@code ItemRenderer.getArmorFoilBuffer}; it is a separate
- *       {@code RenderTypes.armorEntityGlint()} submit.</li>
+ *       {@code ItemRenderer.getArmorFoilBuffer}; it is a separate glint submit. In 26.2 that was
+ *       {@code RenderTypes.armorEntityGlint()}; 26.3 removed the no-argument method and
+ *       {@code RenderTypes.trimmedArmorGlint()} is the item-for-item equivalent (same {@code GLINT} pipeline,
+ *       {@code ENCHANTED_GLINT_ARMOR} texture, {@code ARMOR_ENTITY_GLINT_TEXTURING} and
+ *       {@code VIEW_OFFSET_Z_LAYERING}, plus {@code withForcedSolidModelPhase()} for correct solid-phase
+ *       submission).</li>
  *   <li>{@code INNER_MODEL_OFFSET}/{@code OUTER_MODEL_OFFSET} kept for subclass offset math;
  *       inner/outer selection itself is now expressed by {@code LayerType}.</li>
  * </ul>
@@ -115,8 +119,8 @@ public class ArmorModelBase extends HumanoidModel<HumanoidRenderState> {
     }
 
     protected void submitArmor(PoseStack poseStack, SubmitNodeCollector collector, HumanoidRenderState state, int lightCoords, ItemStack stack, RenderType renderType) {
-        collector.order(0).submitModel(this, state, poseStack, renderType, lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor, null);
+        collector.order(0).submitModel(this, state, poseStack, renderType, lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
         if (stack.hasFoil())
-            collector.order(1).submitModel(this, state, poseStack, RenderTypes.armorEntityGlint(), lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor, null);
+            collector.order(1).submitModel(this, state, poseStack, RenderTypes.trimmedArmorGlint(), lightCoords, OverlayTexture.NO_OVERLAY, state.outlineColor);
     }
 }
