@@ -9,12 +9,12 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
@@ -26,13 +26,15 @@ public abstract class LivingEntityMixin extends Entity {
     @Shadow
     public abstract ItemStack getItemInHand(InteractionHand hand);
 
-    @Inject(method = "swing(Lnet/minecraft/world/InteractionHand;Z)V", at = @At("HEAD"), cancellable = true)
-    private void onSwingHand(InteractionHand hand, boolean fromServerPlayer, CallbackInfo ci) {
+    @Inject(method = "swing(Lnet/minecraft/world/InteractionHand;Lnet/minecraft/world/item/component/SwingAnimation;Z)Z", at = @At("HEAD"), cancellable = true)
+    private void onSwingHand(InteractionHand hand, SwingAnimation animation, boolean sendToSwingingEntity, CallbackInfoReturnable<Boolean> cir) {
         ItemStack stack = this.getItemInHand(hand);
         Item item = stack.getItem();
         if (item instanceof ISwingable iSwingable)
-            if (iSwingable.onEntitySwing(stack, this))
-                ci.cancel();
+            if (iSwingable.onEntitySwing(stack, this)) {
+                cir.setReturnValue(false);
+                cir.cancel();
+            }
     }
 
     @Inject(method = "causeFallDamage", at = @At("HEAD"))
