@@ -86,6 +86,13 @@ jar {
 
     // Merge the common module's transformed classes/resources into the final jar.
     // shadowBundle holds exactly project(':common', transformProductionFabric).
+    // NOTE: `configurations.shadowBundle.singleFile` resolves the artifact eagerly as a plain
+    // java.io.File, which drops the task dependency on :common:transformProductionFabric.
+    // Without this explicit dependsOn a clean build fails with
+    // "Cannot expand ZIP '...transformProductionFabric.jar' as it does not exist", and an
+    // incremental build silently packages a stale (possibly empty) common layer. Depending on
+    // the configuration itself restores the producing task's build dependencies.
+    dependsOn project.configurations.shadowBundle
     from(zipTree(project.configurations.shadowBundle.singleFile)) {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
